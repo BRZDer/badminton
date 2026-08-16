@@ -102,31 +102,31 @@ h1 .accent{color:var(--lime)}
 .court-svg .draw{stroke-dasharray:100.5;stroke-dashoffset:100.5;animation:draw 1.4s .3s ease forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
 .court-label{
-  position:absolute;top:10px;left:16px;font-family:var(--font-num);font-size:19px;
+  position:absolute;top:8px;left:16px;font-family:var(--font-num);font-size:15px;
   letter-spacing:.2em;color:var(--line);opacity:.95;display:flex;align-items:center;gap:6px;
 }
 .court-label select{
-  appearance:none;-webkit-appearance:none;border:1.5px solid var(--lime);border-radius:7px;
-  background:rgba(0,0,0,.25);color:var(--lime);font-family:var(--font-num);font-size:19px;
-  padding:1px 20px 1px 9px;cursor:pointer;
+  appearance:none;-webkit-appearance:none;border:1.5px solid var(--lime);border-radius:6px;
+  background:rgba(0,0,0,.25);color:var(--lime);font-family:var(--font-num);font-size:15px;
+  padding:1px 17px 1px 8px;cursor:pointer;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23d9ff3e' stroke-width='2' fill='none'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 6px center;
+  background-repeat:no-repeat;background-position:right 5px center;
 }
 .court-count{
-  position:absolute;top:8px;right:16px;font-family:var(--font-num);font-size:32px;color:var(--lime);
+  position:absolute;top:6px;right:16px;font-family:var(--font-num);font-size:24px;color:var(--lime);
   white-space:nowrap;
 }
-.court-count small{font-size:16px;color:var(--line);opacity:.75}
-/* 8 \u500B\u7AD9\u4F4D\uFF1A\u758A\u5728\u7403\u5834\u4E0A\uFF0C\u7E31\u5411\u8207\u56DB\u7B49\u4EFD\u5340\u57DF\u5C0D\u9F4A
-   \uFF08padding % \u4EE5\u5BEC\u5EA6\u70BA\u57FA\u6E96\uFF1A90/610\u300176/610\u300130/610\uFF09*/
+.court-count small{font-size:13px;color:var(--line);opacity:.75}
+/* 8 \u500B\u7AD9\u4F4D\uFF1A\u76F4\u63A5\u4EE5\u5834\u7DDA\u5207\u683C\uFF08\u6B04\uFF1D\u55AE\u6253\u7DDA\u5230\u4E2D\u7DDA\uFF09\uFF0C\u540D\u724C\u5728\u683C\u5167\u7F6E\u4E2D
+   padding % \u4EE5\u5BEC\u5EA6\u70BA\u57FA\u6E96\uFF1Atop 66/610\u3001\u5DE6\u53F3 76/610\u3001bottom 24/610 */
 .slots{
   position:absolute;inset:0;display:grid;
   grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,1fr);
-  padding:14.75% 12.46% 4.92%;gap:0 14%;
+  padding:10.82% 12.46% 3.93%;gap:0;
   align-items:center;justify-items:center;
 }
 .slot{
-  width:100%;max-width:150px;min-height:44px;border-radius:10px;
+  width:86%;max-width:170px;min-height:44px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;
   font-size:15px;font-weight:700;letter-spacing:.05em;text-align:center;
   transition:transform .15s;position:relative;padding:4px 8px;
@@ -155,14 +155,24 @@ h1 .accent{color:var(--lime)}
 
 /* === \u7B2C\u4E8C\u5834 === */
 .court2-wrap{margin-top:14px}
-.court2-status{
-  border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;
-  background:rgba(239,233,216,.06);border:1px dashed rgba(239,233,216,.25);
+/* \u672A\u89E3\u9396\uFF1A\u6574\u5EA7\u7403\u5834\u53CD\u767D\u964D\u98FD\u548C */
+.court-card.ghost .court-svg,
+.court-card.ghost .court-label,
+.court-card.ghost .court-count,
+.court-card.ghost .slots{opacity:.34;filter:grayscale(.35) brightness(1.3)}
+.court-card.unlocked .court-svg,
+.court-card.unlocked .court-label,
+.court-card.unlocked .court-count,
+.court-card.unlocked .slots{opacity:1;filter:none}
+.unlock-overlay{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;
 }
-.court2-status .lock{font-size:26px}
-.court2-status .txt{flex:1;font-size:13px;color:var(--dim);line-height:1.6}
-.court2-status .txt b{color:var(--ink)}
-.bar{height:6px;border-radius:99px;background:rgba(239,233,216,.15);margin-top:8px;overflow:hidden}
+.unlock-box{
+  background:rgba(12,53,42,.88);border:1px dashed rgba(239,233,216,.4);border-radius:13px;
+  padding:15px 20px;text-align:center;font-size:13px;color:var(--ink);line-height:1.7;max-width:250px;
+}
+.unlock-box b{color:var(--lime)}
+.bar{height:6px;border-radius:99px;background:rgba(239,233,216,.18);margin-top:9px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--lime);border-radius:99px;transition:width .5s ease}
 .captain-banner{
   margin-top:14px;border-radius:12px;padding:13px 16px;font-size:14px;line-height:1.65;
@@ -268,17 +278,17 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
   <!-- \u7B2C\u4E00\u5834\uFF1A\u7403\u5834\u5373\u540D\u55AE -->
   <section class="court-sec rise" style="animation-delay:.36s">
     <div class="court-card">
-      <svg class="court-svg" viewBox="0 0 610 960" aria-hidden="true">
-        <rect class="draw" pathLength="100" x="30" y="90" width="550" height="840" rx="2"/>
-        <line class="draw" pathLength="100" x1="76" y1="90" x2="76" y2="930"/>
-        <line class="draw" pathLength="100" x1="534" y1="90" x2="534" y2="930"/>
-        <line class="draw" pathLength="100" x1="30" y1="138" x2="580" y2="138"/>
-        <line class="draw" pathLength="100" x1="30" y1="882" x2="580" y2="882"/>
-        <line class="draw" pathLength="100" x1="30" y1="300" x2="580" y2="300"/>
-        <line class="draw" pathLength="100" x1="30" y1="720" x2="580" y2="720"/>
-        <line class="draw" pathLength="100" x1="305" y1="90" x2="305" y2="300"/>
-        <line class="draw" pathLength="100" x1="305" y1="720" x2="305" y2="930"/>
-        <line class="net" x1="18" y1="510" x2="592" y2="510"/>
+      <svg class="court-svg" viewBox="0 0 610 720" aria-hidden="true">
+        <rect class="draw" pathLength="100" x="30" y="66" width="550" height="630" rx="2"/>
+        <line class="draw" pathLength="100" x1="76" y1="66" x2="76" y2="696"/>
+        <line class="draw" pathLength="100" x1="534" y1="66" x2="534" y2="696"/>
+        <line class="draw" pathLength="100" x1="30" y1="102" x2="580" y2="102"/>
+        <line class="draw" pathLength="100" x1="30" y1="660" x2="580" y2="660"/>
+        <line class="draw" pathLength="100" x1="30" y1="224" x2="580" y2="224"/>
+        <line class="draw" pathLength="100" x1="30" y1="538" x2="580" y2="538"/>
+        <line class="draw" pathLength="100" x1="305" y1="66" x2="305" y2="224"/>
+        <line class="draw" pathLength="100" x1="305" y1="538" x2="305" y2="696"/>
+        <line class="net" x1="18" y1="381" x2="592" y2="381"/>
       </svg>
       <div class="court-label">COURT
         <select id="courtSel" title="\u5718\u9577\u8A02\u5230\u7B2C\u5E7E\u9762\u5834\u5730\u5C31\u6539\u9019\u88E1">
@@ -291,8 +301,28 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
     </div>
   </section>
 
-  <!-- \u7B2C\u4E8C\u5834 -->
-  <section class="court2-wrap rise" style="animation-delay:.42s" id="court2Sec"></section>
+  <!-- \u7B2C\u4E8C\u5834\uFF1A\u540C\u6BD4\u4F8B\u7403\u5834\uFF0C\u672A\u89E3\u9396\u6642\u53CD\u767D\u5F15\u5C0E -->
+  <section class="court2-wrap rise" style="animation-delay:.42s">
+    <div id="banner2"></div>
+    <div class="court-card ghost" id="court2Card">
+      <svg class="court-svg" viewBox="0 0 610 720" aria-hidden="true">
+        <rect x="30" y="66" width="550" height="630" rx="2"/>
+        <line x1="76" y1="66" x2="76" y2="696"/>
+        <line x1="534" y1="66" x2="534" y2="696"/>
+        <line x1="30" y1="102" x2="580" y2="102"/>
+        <line x1="30" y1="660" x2="580" y2="660"/>
+        <line x1="30" y1="224" x2="580" y2="224"/>
+        <line x1="30" y1="538" x2="580" y2="538"/>
+        <line x1="305" y1="66" x2="305" y2="224"/>
+        <line x1="305" y1="538" x2="305" y2="696"/>
+        <line class="net" x1="18" y1="381" x2="592" y2="381"/>
+      </svg>
+      <div class="court-label">\u7B2C\u4E8C\u5834</div>
+      <div class="court-count" id="count2">0<small> / 8</small></div>
+      <div class="slots" id="slots2"></div>
+      <div class="unlock-overlay" id="unlockOverlay"></div>
+    </div>
+  </section>
 
   <!-- \u5019\u88DC\u5E2D -->
   <section id="benchSec"></section>
@@ -439,38 +469,44 @@ function render(){
   document.getElementById('courtSel').value = String(courtNo);
   document.getElementById('courtName').textContent = '\u58F9\u8CB3\u53C3\u8086\u4F0D\u9678'[courtNo-1] || courtNo;
 
-  /* \u7B2C\u4E00\u5834 8 \u683C\uFF1A\u4F9D pos \u653E\u7F6E\uFF1B\u9078\u597D\u540D\u5B57\u6642\u7A7A\u4F4D\u9032\u5165\u53EF\u9EDE\u72C0\u614B */
+  /* \u5169\u5EA7\u7403\u5834\uFF1A\u4F9D pos \u653E\u7F6E\uFF1B\u9078\u597D\u540D\u5B57\u6642\u7A7A\u4F4D\u9032\u5165\u53EF\u9EDE\u72C0\u614B */
   const byPos = {};
   signups.forEach(p => { byPos[p.pos] = p; });
-  const s1 = document.getElementById('slots1');
+  const n = signups.length;
   const picking = pendingName && st === 'open';
-  s1.innerHTML = Array.from({length: CAP1}, (_, i) =>
-    byPos[i+1] ? chipHTML(byPos[i+1])
-               : \`<div class="slot empty\${picking ? ' pick' : ''}" data-pos="\${i+1}">NO.\${i+1}</div>\`).join('');
+  const unlocked = n >= UNLOCK2;
+
+  const slotsHTML = (startPos, clickable) =>
+    Array.from({length: 8}, (_, i) => {
+      const pos = startPos + i;
+      return byPos[pos] ? chipHTML(byPos[pos])
+        : \`<div class="slot empty\${clickable && picking ? ' pick' : ''}"\${clickable ? \` data-pos="\${pos}"\` : ''}>NO.\${pos}</div>\`;
+    }).join('');
+
+  document.getElementById('slots1').innerHTML = slotsHTML(1, true);
   const n1 = signups.filter(p => p.pos <= CAP1).length;
   document.getElementById('count1').innerHTML = \`\${n1}<small> / 8</small>\`;
 
-  /* \u7B2C\u4E8C\u5834 */
-  const c2 = document.getElementById('court2Sec');
-  const n = signups.length;
-  if (n <= CAP1){
-    c2.innerHTML = \`<div class="court2-status"><span class="lock">\u{1F512}</span><div class="txt">
-      <b>\u7B2C\u4E8C\u5834\u672A\u958B\u653E</b>\u3000\u5831\u540D\u6EFF \${UNLOCK2} \u4EBA\u81EA\u52D5\u6210\u7ACB\u7B2C\u4E8C\u5834
-      <div class="bar"><i style="width:\${Math.min(n/UNLOCK2*100,100)}%"></i></div></div></div>\`;
+  /* \u7B2C\u4E8C\u5834\uFF1A\u672A\u6EFF 12 \u4EBA\u53CD\u767D\uFF0B\u89E3\u9396\u63D0\u793A\uFF1B\u6EFF 12 \u5168\u5F69\u53EF\u9078\u4F4D */
+  const card2 = document.getElementById('court2Card');
+  const overlay = document.getElementById('unlockOverlay');
+  const banner2 = document.getElementById('banner2');
+  const n2 = signups.filter(p => p.pos > CAP1 && p.pos <= CAP_TOTAL).length;
+  document.getElementById('slots2').innerHTML = slotsHTML(CAP1 + 1, unlocked);
+  document.getElementById('count2').innerHTML = \`\${n2}<small> / 8</small>\`;
+  card2.className = 'court-card ' + (unlocked ? 'unlocked' : 'ghost');
+  if (unlocked){
+    overlay.style.display = 'none';
+    banner2.innerHTML = \`<div class="captain-banner">\u{1F389} \u6EFF \${UNLOCK2} \u4EBA\uFF0C\u7B2C\u4E8C\u5834\u6210\u7ACB\uFF01<br>\u5718\u9577\u8A18\u5F97\u53BB\u52A0\u79DF\u7B2C\u4E8C\u9762\u5834\u5730\uFF5E</div>\`;
+    banner2.style.marginBottom = '12px';
   } else {
-    const second = signups.filter(p => p.pos > CAP1 && p.pos <= CAP_TOTAL).sort((a,b)=>a.pos-b.pos);
-    const chips = second.map(p=>chipHTML(p)).join('');
-    if (n < UNLOCK2){
-      c2.innerHTML = \`<div class="court2-status"><span class="lock">\u23F3</span><div class="txt">
-        <b>\u7B2C\u4E8C\u5834\u5019\u88DC\u4E2D\uFF08\${n}/\${UNLOCK2}\uFF09</b>\u3000\u518D \${UNLOCK2-n} \u4EBA\u5C31\u6210\u7ACB\uFF0C\u5148\u6392\u968A\uFF1A
-        <div class="bench-chips" style="margin-top:9px">\${chips}</div>
-        <div class="bar"><i style="width:\${n/UNLOCK2*100}%"></i></div></div></div>\`;
-    } else {
-      c2.innerHTML = \`<div class="captain-banner">\u{1F389} \u6EFF \${UNLOCK2} \u4EBA\uFF0C\u7B2C\u4E8C\u5834\u6210\u7ACB\uFF01<br>\u5718\u9577\u8A18\u5F97\u53BB\u52A0\u79DF\u7B2C\u4E8C\u9762\u5834\u5730\uFF5E</div>
-        <div class="court2-status" style="margin-top:12px"><span class="lock">\u{1F3F8}</span><div class="txt">
-        <b>\u7B2C\u4E8C\u5834\u540D\u55AE\uFF08\${second.length}/8\uFF09</b>
-        <div class="bench-chips" style="margin-top:9px">\${chips}</div></div></div>\`;
-    }
+    overlay.style.display = 'flex';
+    banner2.innerHTML = '';
+    overlay.innerHTML = n <= CAP1
+      ? \`<div class="unlock-box">\u{1F512} \u5831\u540D\u6EFF <b>\${UNLOCK2} \u4EBA</b>\u81EA\u52D5\u89E3\u9396\u7B2C\u4E8C\u5834<br>\u63EA\u4EBA\u4E00\u8D77\u4F86\uFF01\uFF08\u76EE\u524D \${n} \u4EBA\uFF09
+          <div class="bar"><i style="width:\${Math.min(n/UNLOCK2*100,100)}%"></i></div></div>\`
+      : \`<div class="unlock-box">\u23F3 \u7B2C\u4E8C\u5834\u6392\u968A\u4E2D\uFF0C\u518D <b>\${UNLOCK2 - n} \u4EBA</b>\u5C31\u6210\u7ACB<br>\uFF08\u76EE\u524D \${n}\uFF0F\${UNLOCK2} \u4EBA\uFF09
+          <div class="bar"><i style="width:\${n/UNLOCK2*100}%"></i></div></div>\`;
   }
 
   /* \u5019\u88DC\uFF08>16\uFF09 */
@@ -801,7 +837,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-mVQwLz/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-Zkm0t6/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -833,7 +869,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-mVQwLz/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-Zkm0t6/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
