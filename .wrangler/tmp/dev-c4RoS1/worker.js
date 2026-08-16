@@ -117,16 +117,21 @@ h1 .accent{color:var(--lime)}
   white-space:nowrap;
 }
 .court-count small{font-size:13px;color:var(--line);opacity:.75}
-/* 8 \u500B\u7AD9\u4F4D\uFF1A\u76F4\u63A5\u4EE5\u5834\u7DDA\u5207\u683C\uFF08\u6B04\uFF1D\u55AE\u6253\u7DDA\u5230\u4E2D\u7DDA\uFF09\uFF0C\u540D\u724C\u5728\u683C\u5167\u7F6E\u4E2D
-   padding % \u4EE5\u5BEC\u5EA6\u70BA\u57FA\u6E96\uFF1Atop 66/610\u3001\u5DE6\u53F3 76/610\u3001bottom 24/610 */
+/* 8 \u500B\u7AD9\u4F4D\uFF1A\u76F4\u63A5\u4EE5\u5834\u7DDA\u5207\u683C\uFF08\u6B04\uFF1D\u55AE\u6253\u7DDA\u5230\u4E2D\u7DDA\uFF1B\u5217\uFF1D\u76F8\u9130\u5169\u689D\u6A6B\u7DDA\u4E4B\u9593\u7684\u5E36\uFF09
+   \u6A6B\u7DDA y\uFF1A102 / 224 / 381(\u7DB2) / 538 / 660 \u2192 \u5217\u9AD8 122:157:157:122
+   padding % \u4EE5\u5BEC\u5EA6\u70BA\u57FA\u6E96\uFF1Atop 102/610\u3001\u5DE6\u53F3 76/610\u3001bottom 60/610
+   \u5BB9\u5668\u4E0D\u5403\u9EDE\u64CA\uFF08\u5426\u5247\u6703\u64CB\u4F4F COURT \u4E0B\u62C9\uFF09\uFF0C\u540D\u724C\u81EA\u5DF1\u958B\u56DE\u4F86 */
 .slots{
   position:absolute;inset:0;display:grid;
   grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,1fr);
-  padding:10.82% 12.46% 3.93%;gap:0;
+  padding:15.08% 12.46% 8.20%;gap:0;
   align-items:center;justify-items:center;
+  pointer-events:none;
 }
+.slots .slot{pointer-events:auto}
+.unlock-overlay{pointer-events:none}
 .slot{
-  width:86%;max-width:170px;min-height:44px;border-radius:10px;
+  width:86%;max-width:170px;height:70%;min-height:44px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;
   font-size:15px;font-weight:700;letter-spacing:.05em;text-align:center;
   transition:transform .15s;position:relative;padding:4px 8px;
@@ -140,7 +145,10 @@ h1 .accent{color:var(--lime)}
   border-color:var(--lime);color:var(--lime);cursor:pointer;
   animation:pulsePick 1.1s ease-in-out infinite;
 }
-@keyframes pulsePick{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes pulsePick{
+  0%,100%{box-shadow:0 0 0 0 rgba(217,255,62,0)}
+  50%{box-shadow:0 0 0 5px rgba(217,255,62,.25)}
+}
 .slot.filled{
   background:var(--chip);color:var(--chip-ink);cursor:pointer;
   box-shadow:0 4px 0 rgba(0,0,0,.3);
@@ -184,7 +192,7 @@ h1 .accent{color:var(--lime)}
 .bench{margin-top:14px;border-radius:14px;padding:14px 16px;background:rgba(0,0,0,.22)}
 .bench h3{font-family:var(--font-num);font-size:13px;letter-spacing:.25em;color:var(--dim);margin-bottom:10px}
 .bench-chips{display:flex;flex-wrap:wrap;gap:8px}
-.bench-chips .slot.filled{max-width:none;width:auto;min-height:36px;font-size:13px;padding:6px 14px}
+.bench-chips .slot.filled{max-width:none;width:auto;height:auto;min-height:36px;font-size:13px;padding:6px 14px}
 .bench-chips .slot.filled .num{position:static;margin-right:2px}
 
 /* === \u5E95\u90E8\u6495\u7968\u5831\u540D\u5217 === */
@@ -278,17 +286,17 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
   <!-- \u7B2C\u4E00\u5834\uFF1A\u7403\u5834\u5373\u540D\u55AE -->
   <section class="court-sec rise" style="animation-delay:.36s">
     <div class="court-card">
-      <svg class="court-svg" viewBox="0 0 610 720" aria-hidden="true">
-        <rect class="draw" pathLength="100" x="30" y="66" width="550" height="630" rx="2"/>
-        <line class="draw" pathLength="100" x1="76" y1="66" x2="76" y2="696"/>
-        <line class="draw" pathLength="100" x1="534" y1="66" x2="534" y2="696"/>
-        <line class="draw" pathLength="100" x1="30" y1="102" x2="580" y2="102"/>
-        <line class="draw" pathLength="100" x1="30" y1="660" x2="580" y2="660"/>
-        <line class="draw" pathLength="100" x1="30" y1="224" x2="580" y2="224"/>
-        <line class="draw" pathLength="100" x1="30" y1="538" x2="580" y2="538"/>
-        <line class="draw" pathLength="100" x1="305" y1="66" x2="305" y2="224"/>
-        <line class="draw" pathLength="100" x1="305" y1="538" x2="305" y2="696"/>
-        <line class="net" x1="18" y1="381" x2="592" y2="381"/>
+      <svg class="court-svg" viewBox="0 0 610 570" aria-hidden="true">
+        <rect class="draw" pathLength="100" x="30" y="66" width="550" height="480" rx="2"/>
+        <line class="draw" pathLength="100" x1="76" y1="66" x2="76" y2="546"/>
+        <line class="draw" pathLength="100" x1="534" y1="66" x2="534" y2="546"/>
+        <line class="draw" pathLength="100" x1="30" y1="92" x2="580" y2="92"/>
+        <line class="draw" pathLength="100" x1="30" y1="520" x2="580" y2="520"/>
+        <line class="draw" pathLength="100" x1="30" y1="199" x2="580" y2="199"/>
+        <line class="draw" pathLength="100" x1="30" y1="413" x2="580" y2="413"/>
+        <line class="draw" pathLength="100" x1="305" y1="66" x2="305" y2="199"/>
+        <line class="draw" pathLength="100" x1="305" y1="413" x2="305" y2="546"/>
+        <line class="net" x1="18" y1="306" x2="592" y2="306"/>
       </svg>
       <div class="court-label">COURT
         <select id="courtSel" title="\u5718\u9577\u8A02\u5230\u7B2C\u5E7E\u9762\u5834\u5730\u5C31\u6539\u9019\u88E1">
@@ -305,17 +313,17 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
   <section class="court2-wrap rise" style="animation-delay:.42s">
     <div id="banner2"></div>
     <div class="court-card ghost" id="court2Card">
-      <svg class="court-svg" viewBox="0 0 610 720" aria-hidden="true">
-        <rect x="30" y="66" width="550" height="630" rx="2"/>
-        <line x1="76" y1="66" x2="76" y2="696"/>
-        <line x1="534" y1="66" x2="534" y2="696"/>
-        <line x1="30" y1="102" x2="580" y2="102"/>
-        <line x1="30" y1="660" x2="580" y2="660"/>
-        <line x1="30" y1="224" x2="580" y2="224"/>
-        <line x1="30" y1="538" x2="580" y2="538"/>
-        <line x1="305" y1="66" x2="305" y2="224"/>
-        <line x1="305" y1="538" x2="305" y2="696"/>
-        <line class="net" x1="18" y1="381" x2="592" y2="381"/>
+      <svg class="court-svg" viewBox="0 0 610 570" aria-hidden="true">
+        <rect x="30" y="66" width="550" height="480" rx="2"/>
+        <line x1="76" y1="66" x2="76" y2="546"/>
+        <line x1="534" y1="66" x2="534" y2="546"/>
+        <line x1="30" y1="92" x2="580" y2="92"/>
+        <line x1="30" y1="520" x2="580" y2="520"/>
+        <line x1="30" y1="199" x2="580" y2="199"/>
+        <line x1="30" y1="413" x2="580" y2="413"/>
+        <line x1="305" y1="66" x2="305" y2="199"/>
+        <line x1="305" y1="413" x2="305" y2="546"/>
+        <line class="net" x1="18" y1="306" x2="592" y2="306"/>
       </svg>
       <div class="court-label">\u7B2C\u4E8C\u5834</div>
       <div class="court-count" id="count2">0<small> / 8</small></div>
@@ -837,7 +845,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-Zkm0t6/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-AmZL7X/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -869,7 +877,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-Zkm0t6/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-AmZL7X/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

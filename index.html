@@ -111,16 +111,21 @@ h1 .accent{color:var(--lime)}
   white-space:nowrap;
 }
 .court-count small{font-size:13px;color:var(--line);opacity:.75}
-/* 8 個站位：直接以場線切格（欄＝單打線到中線），名牌在格內置中
-   padding % 以寬度為基準：top 66/610、左右 76/610、bottom 24/610 */
+/* 8 個站位：直接以場線切格（欄＝單打線到中線；列＝相鄰兩條橫線之間的帶）
+   橫線 y：102 / 224 / 381(網) / 538 / 660 → 列高 122:157:157:122
+   padding % 以寬度為基準：top 102/610、左右 76/610、bottom 60/610
+   容器不吃點擊（否則會擋住 COURT 下拉），名牌自己開回來 */
 .slots{
   position:absolute;inset:0;display:grid;
   grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,1fr);
-  padding:10.82% 12.46% 3.93%;gap:0;
+  padding:15.08% 12.46% 8.20%;gap:0;
   align-items:center;justify-items:center;
+  pointer-events:none;
 }
+.slots .slot{pointer-events:auto}
+.unlock-overlay{pointer-events:none}
 .slot{
-  width:86%;max-width:170px;min-height:44px;border-radius:10px;
+  width:86%;max-width:170px;height:70%;min-height:44px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;
   font-size:15px;font-weight:700;letter-spacing:.05em;text-align:center;
   transition:transform .15s;position:relative;padding:4px 8px;
@@ -134,7 +139,10 @@ h1 .accent{color:var(--lime)}
   border-color:var(--lime);color:var(--lime);cursor:pointer;
   animation:pulsePick 1.1s ease-in-out infinite;
 }
-@keyframes pulsePick{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes pulsePick{
+  0%,100%{box-shadow:0 0 0 0 rgba(217,255,62,0)}
+  50%{box-shadow:0 0 0 5px rgba(217,255,62,.25)}
+}
 .slot.filled{
   background:var(--chip);color:var(--chip-ink);cursor:pointer;
   box-shadow:0 4px 0 rgba(0,0,0,.3);
@@ -178,7 +186,7 @@ h1 .accent{color:var(--lime)}
 .bench{margin-top:14px;border-radius:14px;padding:14px 16px;background:rgba(0,0,0,.22)}
 .bench h3{font-family:var(--font-num);font-size:13px;letter-spacing:.25em;color:var(--dim);margin-bottom:10px}
 .bench-chips{display:flex;flex-wrap:wrap;gap:8px}
-.bench-chips .slot.filled{max-width:none;width:auto;min-height:36px;font-size:13px;padding:6px 14px}
+.bench-chips .slot.filled{max-width:none;width:auto;height:auto;min-height:36px;font-size:13px;padding:6px 14px}
 .bench-chips .slot.filled .num{position:static;margin-right:2px}
 
 /* === 底部撕票報名列 === */
@@ -272,17 +280,17 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
   <!-- 第一場：球場即名單 -->
   <section class="court-sec rise" style="animation-delay:.36s">
     <div class="court-card">
-      <svg class="court-svg" viewBox="0 0 610 720" aria-hidden="true">
-        <rect class="draw" pathLength="100" x="30" y="66" width="550" height="630" rx="2"/>
-        <line class="draw" pathLength="100" x1="76" y1="66" x2="76" y2="696"/>
-        <line class="draw" pathLength="100" x1="534" y1="66" x2="534" y2="696"/>
-        <line class="draw" pathLength="100" x1="30" y1="102" x2="580" y2="102"/>
-        <line class="draw" pathLength="100" x1="30" y1="660" x2="580" y2="660"/>
-        <line class="draw" pathLength="100" x1="30" y1="224" x2="580" y2="224"/>
-        <line class="draw" pathLength="100" x1="30" y1="538" x2="580" y2="538"/>
-        <line class="draw" pathLength="100" x1="305" y1="66" x2="305" y2="224"/>
-        <line class="draw" pathLength="100" x1="305" y1="538" x2="305" y2="696"/>
-        <line class="net" x1="18" y1="381" x2="592" y2="381"/>
+      <svg class="court-svg" viewBox="0 0 610 570" aria-hidden="true">
+        <rect class="draw" pathLength="100" x="30" y="66" width="550" height="480" rx="2"/>
+        <line class="draw" pathLength="100" x1="76" y1="66" x2="76" y2="546"/>
+        <line class="draw" pathLength="100" x1="534" y1="66" x2="534" y2="546"/>
+        <line class="draw" pathLength="100" x1="30" y1="92" x2="580" y2="92"/>
+        <line class="draw" pathLength="100" x1="30" y1="520" x2="580" y2="520"/>
+        <line class="draw" pathLength="100" x1="30" y1="199" x2="580" y2="199"/>
+        <line class="draw" pathLength="100" x1="30" y1="413" x2="580" y2="413"/>
+        <line class="draw" pathLength="100" x1="305" y1="66" x2="305" y2="199"/>
+        <line class="draw" pathLength="100" x1="305" y1="413" x2="305" y2="546"/>
+        <line class="net" x1="18" y1="306" x2="592" y2="306"/>
       </svg>
       <div class="court-label">COURT
         <select id="courtSel" title="團長訂到第幾面場地就改這裡">
@@ -299,17 +307,17 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
   <section class="court2-wrap rise" style="animation-delay:.42s">
     <div id="banner2"></div>
     <div class="court-card ghost" id="court2Card">
-      <svg class="court-svg" viewBox="0 0 610 720" aria-hidden="true">
-        <rect x="30" y="66" width="550" height="630" rx="2"/>
-        <line x1="76" y1="66" x2="76" y2="696"/>
-        <line x1="534" y1="66" x2="534" y2="696"/>
-        <line x1="30" y1="102" x2="580" y2="102"/>
-        <line x1="30" y1="660" x2="580" y2="660"/>
-        <line x1="30" y1="224" x2="580" y2="224"/>
-        <line x1="30" y1="538" x2="580" y2="538"/>
-        <line x1="305" y1="66" x2="305" y2="224"/>
-        <line x1="305" y1="538" x2="305" y2="696"/>
-        <line class="net" x1="18" y1="381" x2="592" y2="381"/>
+      <svg class="court-svg" viewBox="0 0 610 570" aria-hidden="true">
+        <rect x="30" y="66" width="550" height="480" rx="2"/>
+        <line x1="76" y1="66" x2="76" y2="546"/>
+        <line x1="534" y1="66" x2="534" y2="546"/>
+        <line x1="30" y1="92" x2="580" y2="92"/>
+        <line x1="30" y1="520" x2="580" y2="520"/>
+        <line x1="30" y1="199" x2="580" y2="199"/>
+        <line x1="30" y1="413" x2="580" y2="413"/>
+        <line x1="305" y1="66" x2="305" y2="199"/>
+        <line x1="305" y1="413" x2="305" y2="546"/>
+        <line class="net" x1="18" y1="306" x2="592" y2="306"/>
       </svg>
       <div class="court-label">第二場</div>
       <div class="court-count" id="count2">0<small> / 8</small></div>
