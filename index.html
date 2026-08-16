@@ -608,7 +608,9 @@ async function doSignup(name, pos){
     absorb(await api('signup', {date: DKEY, name, pos}));
     online = true; pendingName = null;
     const me = signups.find(p => p.name === name);
-    toast(me && me.pos <= CAP1 ? `✅ ${name} 站上 NO.${me.pos}！` : `✅ ${name} 已排入，目前共 ${signups.length} 人`);
+    toast(me && me.pos <= CAP1 ? `✅ ${name} 站上 NO.${me.pos}！`
+        : me ? `✅ ${name} 排在 NO.${me.pos}！目前共 ${signups.length} 人`
+        : `✅ ${name} 已排入`);
   }catch(e){
     online = navigator.onLine !== false;
     toast(String(e).includes('taken') ? '這個位置剛被搶走，換一格吧' : '連線失敗，請再試一次');
@@ -687,14 +689,20 @@ async function addName(){
   try{
     absorb(await api('addname', {name, date: DKEY}));
     online = true; inp.value = '';
-    /* 加完直接進入選位流程：收合折疊區、名字上選單、空位開始閃 */
+    /* 加完直接進入選位流程：收合折疊區、名字上選單、空位開始閃
+       第一場已滿 → 不用選，直接自動排入下一個號碼（9 起跳） */
     if (refreshStatus() === 'open' && !signups.some(p => p.name === name)){
-      pendingName = name;
       document.querySelector('details.fold').removeAttribute('open');
+      const full1 = signups.filter(p => p.pos <= CAP1).length >= CAP1;
+      if (full1){
+        await doSignup(name, null);   // 伺服器自動給最前空號
+        document.getElementById('court2Card').scrollIntoView({behavior:'smooth', block:'center'});
+        return;
+      }
+      pendingName = name;
       render();
       document.querySelector('.court-sec').scrollIntoView({behavior:'smooth', block:'center'});
-      const full1 = signups.filter(p => p.pos <= CAP1).length >= CAP1;
-      toast(full1 ? `${name} 已加入！第一場已滿，按「報名」排入第二場` : `${name} 已加入！點場上的空位選你的位置`);
+      toast(`${name} 已加入！點場上的空位選你的位置`);
       return;
     }
     toast(`已把 ${name} 加進名單`);
