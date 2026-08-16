@@ -579,14 +579,15 @@ function render(){
   if (st !== 'open'){
     sel.innerHTML = `<option>${st === 'locked' ? '已截止，名單鎖定備戰' : st === 'live' ? '開打中！' : '本週已收場，等下週開放'}</option>`;
     go.disabled = true;
-  } else if (!avail.length){
-    sel.innerHTML = `<option>全員都報名了 💪</option>`; go.disabled = true;
   } else {
     if (pendingName && !avail.includes(pendingName)) pendingName = null;
-    sel.innerHTML = `<option value="" disabled selected>選你的名字</option>` +
-      avail.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    /* 全名單都列出：已上場的打勾反灰，還沒報的可選 */
+    sel.innerHTML = `<option value="" disabled selected>${avail.length ? '選你的名字' : '全員都上場了 💪'}</option>` +
+      roster.map(x => signed.has(x)
+        ? `<option disabled>✔ ${esc(x)}（已上場）</option>`
+        : `<option value="${esc(x)}">${esc(x)}</option>`).join('');
     if (pendingName) sel.value = pendingName;
-    go.disabled = false;
+    go.disabled = !avail.length;
   }
 
   renderHistory();
@@ -676,7 +677,7 @@ document.getElementById('courtSel').addEventListener('change', async e => {
 });
 
 /* 新增名字（進共享 roster） */
-document.getElementById('addBtn').addEventListener('click', async () => {
+async function addName(){
   const inp = document.getElementById('newName');
   const name = inp.value.trim();
   if (!name) return;
@@ -685,9 +686,23 @@ document.getElementById('addBtn').addEventListener('click', async () => {
   try{
     absorb(await api('addname', {name, date: DKEY}));
     online = true; inp.value = '';
+    /* 加完直接進入選位流程：收合折疊區、名字上選單、空位開始閃 */
+    if (refreshStatus() === 'open' && !signups.some(p => p.name === name)){
+      pendingName = name;
+      document.querySelector('details.fold').removeAttribute('open');
+      render();
+      document.querySelector('.court-sec').scrollIntoView({behavior:'smooth', block:'center'});
+      const full1 = signups.filter(p => p.pos <= CAP1).length >= CAP1;
+      toast(full1 ? `${name} 已加入！第一場已滿，按「報名」排入第二場` : `${name} 已加入！點場上的空位選你的位置`);
+      return;
+    }
     toast(`已把 ${name} 加進名單`);
   }catch(e){ online = false; toast('連線失敗，請再試一次'); }
   render();
+}
+document.getElementById('addBtn').addEventListener('click', addName);
+document.getElementById('newName').addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); addName(); }
 });
 
 /* 分享 */

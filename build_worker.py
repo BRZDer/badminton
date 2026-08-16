@@ -170,6 +170,13 @@ export default {
         await kv.put('s:' + date, JSON.stringify(s));
         return J(await buildState(kv, date, true));
       }
+      if (p === 'delname') {   // 清理打錯的名字（API 專用，無 UI）
+        const name = String(b.name || '').trim();
+        if (!name) return J({ error: 'bad request' }, 400);
+        const roster = (await readRoster(kv)).filter(x => x !== name);
+        await kv.put('roster', JSON.stringify(roster));
+        return J({ roster });
+      }
       if (p === 'addname') {
         const name = String(b.name || '').trim().slice(0, 20);
         if (!name) return J({ error: 'bad request' }, 400);
