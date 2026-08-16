@@ -219,12 +219,35 @@ h1 .accent{color:var(--lime)}
   background-size:26px 14px;background-repeat:repeat-x;
 }
 .ticket-inner{max-width:520px;margin:0 auto;display:flex;gap:10px}
+.name-dd{flex:1;position:relative;min-width:0}
 .name-select{
-  flex:1;appearance:none;-webkit-appearance:none;
+  width:100%;appearance:none;-webkit-appearance:none;text-align:left;cursor:pointer;
   font-family:var(--font-body);font-size:16px;font-weight:700;color:var(--court);
   background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%230c352a' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center;
   border:2px solid var(--court);border-radius:10px;padding:12px 38px 12px 14px;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
+.name-select:disabled{cursor:default;color:rgba(12,53,42,.55)}
+/* \u540D\u55AE\u9762\u677F\uFF1A\u5F80\u4E0A\u5F48\u51FA */
+.name-list{
+  position:absolute;bottom:calc(100% + 10px);left:0;right:0;z-index:60;
+  background:#fff;border:2px solid var(--court);border-radius:12px;overflow:hidden auto;
+  max-height:44vh;box-shadow:0 -10px 30px rgba(0,0,0,.35);
+}
+.name-row{
+  display:flex;align-items:center;gap:8px;padding:11px 8px 11px 14px;cursor:pointer;
+  font-size:15px;font-weight:700;color:var(--court);border-bottom:1px solid rgba(12,53,42,.08);
+}
+.name-row:last-child{border-bottom:none}
+.name-row:active{background:rgba(12,53,42,.07)}
+.name-row .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.name-row.signed{color:rgba(12,53,42,.4);cursor:default;font-weight:500}
+.name-row .del{
+  flex:none;width:24px;height:24px;border-radius:99px;border:none;cursor:pointer;
+  background:rgba(12,53,42,.08);color:rgba(12,53,42,.55);font-size:12px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}
+.name-row .del:active{background:var(--coral);color:#fff}
 .btn-go{
   font-family:var(--font-display);font-size:18px;letter-spacing:.2em;
   background:var(--court);color:var(--lime);border:none;border-radius:10px;
@@ -372,7 +395,10 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
 <!-- \u6495\u7968\u5831\u540D\u5217 -->
 <div class="ticket-bar">
   <div class="ticket-inner">
-    <select class="name-select" id="nameSel"><option>\u8F09\u5165\u4E2D\u22EF</option></select>
+    <div class="name-dd" id="nameDD">
+      <button class="name-select" id="nameBtn" type="button" disabled>\u8F09\u5165\u4E2D\u22EF</button>
+      <div class="name-list" id="nameList" hidden></div>
+    </div>
     <button class="btn-go" id="goBtn" disabled>\u5831\u540D</button>
   </div>
 </div>
@@ -469,6 +495,7 @@ function demoApi(path, body){
   }
   if (path === 'cancel') w.signups = w.signups.filter(x=>x.id!==body.id);
   if (path === 'addname' && !demoStore.roster.includes(body.name)) demoStore.roster.push(body.name);
+  if (path === 'delname') demoStore.roster = demoStore.roster.filter(x => x !== body.name);
   if (path === 'setcourt') w.court = body.court;
   const counts = {};
   WEEK_KEYS.forEach(k => { counts[k] = demoWeek(k).signups.length; });
@@ -486,7 +513,7 @@ async function api(path, body){
 function absorb(s){
   if (!s) return;
   if (Array.isArray(s.signups)) signups = s.signups;
-  if (Array.isArray(s.roster) && s.roster.length) roster = s.roster;
+  if (Array.isArray(s.roster)) roster = s.roster;
   if (Array.isArray(s.history)) history = s.history;
   if (s.court >= 1) courtNo = s.court;
   if (s.counts) weekCounts = s.counts;
@@ -579,22 +606,23 @@ function render(){
         \${waiters.map(p=>chipHTML(p)).join('')}</div></div>\`
     : '';
 
-  /* \u4E0B\u62C9\u9078\u55AE\uFF1A\u540D\u55AE\uFF0D\u5DF2\u5831\u540D */
-  const sel = document.getElementById('nameSel'), go = document.getElementById('goBtn');
+  /* \u81EA\u8A02\u540D\u5B57\u9078\u55AE\uFF1A\u5DF2\u4E0A\u5834\u6253\u52FE\u53CD\u7070\u3001\u53EF\u9078\u7684\u6BCF\u5217\u53F3\u5074\u6709\u5C0F \u2715 \u53EF\u81EA\u884C\u79FB\u9664\u820A\u540D */
+  const btn = document.getElementById('nameBtn'), list = document.getElementById('nameList'), go = document.getElementById('goBtn');
   const signed = new Set(signups.map(p => p.name));
   const avail = roster.filter(x => !signed.has(x));
   if (st !== 'open'){
-    sel.innerHTML = \`<option>\${st === 'locked' ? '\u5DF2\u622A\u6B62\uFF0C\u540D\u55AE\u9396\u5B9A\u5099\u6230' : st === 'live' ? '\u958B\u6253\u4E2D\uFF01' : '\u672C\u9031\u5DF2\u6536\u5834\uFF0C\u7B49\u4E0B\u9031\u958B\u653E'}</option>\`;
-    go.disabled = true;
+    btn.textContent = st === 'locked' ? '\u5DF2\u622A\u6B62\uFF0C\u540D\u55AE\u9396\u5B9A\u5099\u6230' : st === 'live' ? '\u958B\u6253\u4E2D\uFF01' : '\u672C\u9031\u5DF2\u6536\u5834\uFF0C\u7B49\u4E0B\u9031\u958B\u653E';
+    btn.disabled = true; list.hidden = true; go.disabled = true;
   } else {
     if (pendingName && !avail.includes(pendingName)) pendingName = null;
-    /* \u5168\u540D\u55AE\u90FD\u5217\u51FA\uFF1A\u5DF2\u4E0A\u5834\u7684\u6253\u52FE\u53CD\u7070\uFF0C\u9084\u6C92\u5831\u7684\u53EF\u9078 */
-    sel.innerHTML = \`<option value="" disabled selected>\${avail.length ? '\u9078\u4F60\u7684\u540D\u5B57' : '\u5168\u54E1\u90FD\u4E0A\u5834\u4E86 \u{1F4AA}'}</option>\` +
-      roster.map(x => signed.has(x)
-        ? \`<option disabled>\u2714 \${esc(x)}\uFF08\u5DF2\u4E0A\u5834\uFF09</option>\`
-        : \`<option value="\${esc(x)}">\${esc(x)}</option>\`).join('');
-    if (pendingName) sel.value = pendingName;
+    btn.disabled = false;
+    btn.textContent = pendingName || (avail.length ? '\u9078\u4F60\u7684\u540D\u5B57' : '\u5168\u54E1\u90FD\u4E0A\u5834\u4E86 \u{1F4AA}');
     go.disabled = !avail.length;
+    list.innerHTML = roster.map(x => signed.has(x)
+      ? \`<div class="name-row signed"><span class="nm">\u2714 \${esc(x)}\uFF08\u5DF2\u4E0A\u5834\uFF09</span></div>\`
+      : \`<div class="name-row" data-name="\${esc(x)}"><span class="nm">\${esc(x)}</span>
+          <button class="del" data-del="\${esc(x)}" title="\u5F9E\u540D\u55AE\u79FB\u9664">\u2715</button></div>\`).join('')
+      || \`<div class="name-row signed"><span class="nm">\u540D\u55AE\u662F\u7A7A\u7684\uFF0C\u5148\u53BB\u300C\u65B0\u589E\u968A\u54E1\u300D</span></div>\`;
   }
 
   renderHistory();
@@ -624,20 +652,44 @@ async function doSignup(name, pos){
   render();
 }
 
-document.getElementById('nameSel').addEventListener('change', e => {
-  if (refreshStatus() !== 'open') return;
-  pendingName = e.target.value || null;
-  render();
-  if (pendingName){
-    const hasEmpty = signups.filter(p => p.pos <= CAP1).length < CAP1;
-    toast(hasEmpty ? \`\${pendingName}\uFF0C\u9EDE\u5834\u4E0A\u7684\u7A7A\u4F4D\u5B8C\u6210\u5831\u540D\` : '\u7B2C\u4E00\u5834\u5DF2\u6EFF\uFF0C\u6309\u300C\u5831\u540D\u300D\u6392\u5165\u7B2C\u4E8C\u5834');
+/* \u81EA\u8A02\u9078\u55AE\u958B\u5408\u8207\u9078\u64C7/\u522A\u9664 */
+document.getElementById('nameBtn').addEventListener('click', () => {
+  const list = document.getElementById('nameList');
+  list.hidden = !list.hidden;
+});
+document.getElementById('nameList').addEventListener('click', async e => {
+  /* \u5C0F \u2715\uFF1A\u628A\u820A\u540D\u5B57\u5F9E\u540D\u55AE\u79FB\u9664\uFF08\u4E0D\u5F71\u97FF\u5DF2\u5831\u540D\u5834\u6B21\uFF09 */
+  const del = e.target.closest('.del');
+  if (del){
+    e.stopPropagation();
+    const name = del.dataset.del;
+    if (!confirm(\`\u628A\u300C\${name}\u300D\u5F9E\u540D\u55AE\u79FB\u9664\uFF1F\\n\uFF08\u6539\u540D\u7559\u4E0B\u7684\u820A\u540D\u5B57\u53EF\u4EE5\u9019\u6A23\u6E05\u6389\uFF0C\u4E0D\u5F71\u97FF\u5DF2\u5831\u540D\u7684\u5834\u6B21\uFF09\`)) return;
+    try{
+      absorb(await api('delname', {name}));
+      online = true;
+      if (pendingName === name) pendingName = null;
+      toast(\`\u5DF2\u628A \${name} \u5F9E\u540D\u55AE\u79FB\u9664\`);
+    }catch(err){ online = false; toast('\u9023\u7DDA\u5931\u6557\uFF0C\u8ACB\u518D\u8A66\u4E00\u6B21'); }
+    render();
+    document.getElementById('nameList').hidden = false;   // \u4FDD\u6301\u9762\u677F\u958B\u8457\u65B9\u4FBF\u9023\u7E8C\u6574\u7406
+    return;
   }
+  const row = e.target.closest('.name-row:not(.signed)');
+  if (!row) return;
+  pendingName = row.dataset.name;
+  document.getElementById('nameList').hidden = true;
+  render();
+  const hasEmpty = signups.filter(p => p.pos <= CAP1).length < CAP1;
+  toast(hasEmpty ? \`\${pendingName}\uFF0C\u9EDE\u5834\u4E0A\u7684\u7A7A\u4F4D\u5B8C\u6210\u5831\u540D\` : '\u7B2C\u4E00\u5834\u5DF2\u6EFF\uFF0C\u6309\u300C\u5831\u540D\u300D\u6392\u5165\u7B2C\u4E8C\u5834');
+});
+/* \u9EDE\u9762\u677F\u5916\u9762 \u2192 \u6536\u5408 */
+document.addEventListener('click', e => {
+  if (!e.target.closest('#nameDD')) document.getElementById('nameList').hidden = true;
 });
 
 document.getElementById('goBtn').addEventListener('click', async () => {
-  const name = document.getElementById('nameSel').value;
-  if (!name) { toast('\u5148\u9078\u540D\u5B57\u518D\u5831\u540D'); return; }
-  await doSignup(name, null);   // \u4E0D\u6307\u5B9A\u4F4D\u7F6E \u2192 \u4F3A\u670D\u5668\u6392\u6700\u524D\u7A7A\u4F4D
+  if (!pendingName) { toast('\u5148\u9078\u540D\u5B57\u518D\u5831\u540D'); return; }
+  await doSignup(pendingName, null);   // \u4E0D\u6307\u5B9A\u4F4D\u7F6E \u2192 \u4F3A\u670D\u5668\u6392\u6700\u524D\u7A7A\u4F4D
 });
 
 document.body.addEventListener('click', async e => {
@@ -946,7 +998,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-LvHAmV/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-mOdLZW/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -978,7 +1030,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-LvHAmV/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-mOdLZW/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

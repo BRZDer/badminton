@@ -213,12 +213,35 @@ h1 .accent{color:var(--lime)}
   background-size:26px 14px;background-repeat:repeat-x;
 }
 .ticket-inner{max-width:520px;margin:0 auto;display:flex;gap:10px}
+.name-dd{flex:1;position:relative;min-width:0}
 .name-select{
-  flex:1;appearance:none;-webkit-appearance:none;
+  width:100%;appearance:none;-webkit-appearance:none;text-align:left;cursor:pointer;
   font-family:var(--font-body);font-size:16px;font-weight:700;color:var(--court);
   background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%230c352a' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center;
   border:2px solid var(--court);border-radius:10px;padding:12px 38px 12px 14px;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
+.name-select:disabled{cursor:default;color:rgba(12,53,42,.55)}
+/* 名單面板：往上彈出 */
+.name-list{
+  position:absolute;bottom:calc(100% + 10px);left:0;right:0;z-index:60;
+  background:#fff;border:2px solid var(--court);border-radius:12px;overflow:hidden auto;
+  max-height:44vh;box-shadow:0 -10px 30px rgba(0,0,0,.35);
+}
+.name-row{
+  display:flex;align-items:center;gap:8px;padding:11px 8px 11px 14px;cursor:pointer;
+  font-size:15px;font-weight:700;color:var(--court);border-bottom:1px solid rgba(12,53,42,.08);
+}
+.name-row:last-child{border-bottom:none}
+.name-row:active{background:rgba(12,53,42,.07)}
+.name-row .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.name-row.signed{color:rgba(12,53,42,.4);cursor:default;font-weight:500}
+.name-row .del{
+  flex:none;width:24px;height:24px;border-radius:99px;border:none;cursor:pointer;
+  background:rgba(12,53,42,.08);color:rgba(12,53,42,.55);font-size:12px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}
+.name-row .del:active{background:var(--coral);color:#fff}
 .btn-go{
   font-family:var(--font-display);font-size:18px;letter-spacing:.2em;
   background:var(--court);color:var(--lime);border:none;border-radius:10px;
@@ -366,7 +389,10 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
 <!-- 撕票報名列 -->
 <div class="ticket-bar">
   <div class="ticket-inner">
-    <select class="name-select" id="nameSel"><option>載入中⋯</option></select>
+    <div class="name-dd" id="nameDD">
+      <button class="name-select" id="nameBtn" type="button" disabled>載入中⋯</button>
+      <div class="name-list" id="nameList" hidden></div>
+    </div>
     <button class="btn-go" id="goBtn" disabled>報名</button>
   </div>
 </div>
@@ -463,6 +489,7 @@ function demoApi(path, body){
   }
   if (path === 'cancel') w.signups = w.signups.filter(x=>x.id!==body.id);
   if (path === 'addname' && !demoStore.roster.includes(body.name)) demoStore.roster.push(body.name);
+  if (path === 'delname') demoStore.roster = demoStore.roster.filter(x => x !== body.name);
   if (path === 'setcourt') w.court = body.court;
   const counts = {};
   WEEK_KEYS.forEach(k => { counts[k] = demoWeek(k).signups.length; });
@@ -480,7 +507,7 @@ async function api(path, body){
 function absorb(s){
   if (!s) return;
   if (Array.isArray(s.signups)) signups = s.signups;
-  if (Array.isArray(s.roster) && s.roster.length) roster = s.roster;
+  if (Array.isArray(s.roster)) roster = s.roster;
   if (Array.isArray(s.history)) history = s.history;
   if (s.court >= 1) courtNo = s.court;
   if (s.counts) weekCounts = s.counts;
@@ -573,22 +600,23 @@ function render(){
         ${waiters.map(p=>chipHTML(p)).join('')}</div></div>`
     : '';
 
-  /* 下拉選單：名單－已報名 */
-  const sel = document.getElementById('nameSel'), go = document.getElementById('goBtn');
+  /* 自訂名字選單：已上場打勾反灰、可選的每列右側有小 ✕ 可自行移除舊名 */
+  const btn = document.getElementById('nameBtn'), list = document.getElementById('nameList'), go = document.getElementById('goBtn');
   const signed = new Set(signups.map(p => p.name));
   const avail = roster.filter(x => !signed.has(x));
   if (st !== 'open'){
-    sel.innerHTML = `<option>${st === 'locked' ? '已截止，名單鎖定備戰' : st === 'live' ? '開打中！' : '本週已收場，等下週開放'}</option>`;
-    go.disabled = true;
+    btn.textContent = st === 'locked' ? '已截止，名單鎖定備戰' : st === 'live' ? '開打中！' : '本週已收場，等下週開放';
+    btn.disabled = true; list.hidden = true; go.disabled = true;
   } else {
     if (pendingName && !avail.includes(pendingName)) pendingName = null;
-    /* 全名單都列出：已上場的打勾反灰，還沒報的可選 */
-    sel.innerHTML = `<option value="" disabled selected>${avail.length ? '選你的名字' : '全員都上場了 💪'}</option>` +
-      roster.map(x => signed.has(x)
-        ? `<option disabled>✔ ${esc(x)}（已上場）</option>`
-        : `<option value="${esc(x)}">${esc(x)}</option>`).join('');
-    if (pendingName) sel.value = pendingName;
+    btn.disabled = false;
+    btn.textContent = pendingName || (avail.length ? '選你的名字' : '全員都上場了 💪');
     go.disabled = !avail.length;
+    list.innerHTML = roster.map(x => signed.has(x)
+      ? `<div class="name-row signed"><span class="nm">✔ ${esc(x)}（已上場）</span></div>`
+      : `<div class="name-row" data-name="${esc(x)}"><span class="nm">${esc(x)}</span>
+          <button class="del" data-del="${esc(x)}" title="從名單移除">✕</button></div>`).join('')
+      || `<div class="name-row signed"><span class="nm">名單是空的，先去「新增隊員」</span></div>`;
   }
 
   renderHistory();
@@ -618,20 +646,44 @@ async function doSignup(name, pos){
   render();
 }
 
-document.getElementById('nameSel').addEventListener('change', e => {
-  if (refreshStatus() !== 'open') return;
-  pendingName = e.target.value || null;
-  render();
-  if (pendingName){
-    const hasEmpty = signups.filter(p => p.pos <= CAP1).length < CAP1;
-    toast(hasEmpty ? `${pendingName}，點場上的空位完成報名` : '第一場已滿，按「報名」排入第二場');
+/* 自訂選單開合與選擇/刪除 */
+document.getElementById('nameBtn').addEventListener('click', () => {
+  const list = document.getElementById('nameList');
+  list.hidden = !list.hidden;
+});
+document.getElementById('nameList').addEventListener('click', async e => {
+  /* 小 ✕：把舊名字從名單移除（不影響已報名場次） */
+  const del = e.target.closest('.del');
+  if (del){
+    e.stopPropagation();
+    const name = del.dataset.del;
+    if (!confirm(`把「${name}」從名單移除？\n（改名留下的舊名字可以這樣清掉，不影響已報名的場次）`)) return;
+    try{
+      absorb(await api('delname', {name}));
+      online = true;
+      if (pendingName === name) pendingName = null;
+      toast(`已把 ${name} 從名單移除`);
+    }catch(err){ online = false; toast('連線失敗，請再試一次'); }
+    render();
+    document.getElementById('nameList').hidden = false;   // 保持面板開著方便連續整理
+    return;
   }
+  const row = e.target.closest('.name-row:not(.signed)');
+  if (!row) return;
+  pendingName = row.dataset.name;
+  document.getElementById('nameList').hidden = true;
+  render();
+  const hasEmpty = signups.filter(p => p.pos <= CAP1).length < CAP1;
+  toast(hasEmpty ? `${pendingName}，點場上的空位完成報名` : '第一場已滿，按「報名」排入第二場');
+});
+/* 點面板外面 → 收合 */
+document.addEventListener('click', e => {
+  if (!e.target.closest('#nameDD')) document.getElementById('nameList').hidden = true;
 });
 
 document.getElementById('goBtn').addEventListener('click', async () => {
-  const name = document.getElementById('nameSel').value;
-  if (!name) { toast('先選名字再報名'); return; }
-  await doSignup(name, null);   // 不指定位置 → 伺服器排最前空位
+  if (!pendingName) { toast('先選名字再報名'); return; }
+  await doSignup(pendingName, null);   // 不指定位置 → 伺服器排最前空位
 });
 
 document.body.addEventListener('click', async e => {
