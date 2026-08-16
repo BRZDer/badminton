@@ -88,6 +88,17 @@ h1 .accent{color:var(--lime)}
 .pill.live{background:var(--coral);color:#fff}
 .pill.closed{background:rgba(239,233,216,.2);color:var(--ink)}
 .countdown{font-size:12px;color:var(--dim);letter-spacing:.05em}
+/* \u4E09\u9031\u5207\u63DB\u9801\u7C64 */
+.week-tabs{display:flex;gap:8px;margin-top:14px}
+.week-tab{
+  flex:1;border:1.5px solid rgba(239,233,216,.3);border-radius:11px;background:rgba(0,0,0,.2);
+  color:var(--dim);font-family:var(--font-body);font-size:12px;padding:8px 4px;cursor:pointer;
+  text-align:center;line-height:1.5;letter-spacing:.05em;
+}
+.week-tab .d{font-family:var(--font-num);font-size:15px;letter-spacing:.06em;display:block;color:var(--ink)}
+.week-tab .c{font-size:11px}
+.week-tab.on{background:var(--lime);border-color:var(--lime);color:var(--court)}
+.week-tab.on .d,.week-tab.on .c{color:var(--court)}
 
 /* === \u7403\u5834\uFF08SVG \u756B\u7DDA + \u540D\u5B57\u4E0A\u5834\uFF09 === */
 .court-sec{margin-top:22px;position:relative}
@@ -279,6 +290,7 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
       <span class="pill open" id="statusPill">\u5831\u540D\u4E2D</span>
       <span class="countdown" id="countdown"></span>
     </div>
+    <div class="week-tabs rise" style="animation-delay:.34s" id="weekTabs"></div>
   </header>
 
   <div class="offline" id="offlineBox">\u26A0\uFE0F \u9023\u7DDA\u4E0D\u5230\u5831\u540D\u8CC7\u6599\u5EAB\uFF0C\u986F\u793A\u7684\u662F\u5FEB\u53D6\u540D\u55AE\u3002\u8ACB\u6AA2\u67E5\u7DB2\u8DEF\u5F8C\u91CD\u65B0\u6574\u7406\u3002</div>
@@ -384,20 +396,33 @@ function sessionSaturday(now = new Date()){
   if (diff === 0 && now.getHours() >= 18) d.setDate(d.getDate() + 7);
   return d;
 }
-const SAT = sessionSaturday();
 const pad = n => String(n).padStart(2, '0');
-const DKEY = \`\${SAT.getFullYear()}-\${pad(SAT.getMonth()+1)}-\${pad(SAT.getDate())}\`;
-document.getElementById('dateNum').textContent = \`\${pad(SAT.getMonth()+1)}.\${pad(SAT.getDate())}\`;
+/* \u4E09\u9031\u5834\u6B21\uFF1A\u672C\u9031\uFF08\u4F9D\u4E0A\u9762\u898F\u5247\u6EFE\u52D5\uFF09\uFF0B\u9694\u4E00\u9031\uFF0B\u9694\u5169\u9031 */
+const SATS = [0, 1, 2].map(i => {
+  const d = sessionSaturday();
+  d.setDate(d.getDate() + 7 * i);
+  return d;
+});
+const dkeyOf = d => \`\${d.getFullYear()}-\${pad(d.getMonth()+1)}-\${pad(d.getDate())}\`;
+const mdOf = d => \`\${pad(d.getMonth()+1)}.\${pad(d.getDate())}\`;
+const WEEK_KEYS = SATS.map(dkeyOf);
+let selIdx = 0;
+let DKEY = WEEK_KEYS[0];
+let weekCounts = {};   // {dkey: \u5831\u540D\u4EBA\u6578} \u7D66\u9801\u7C64\u7528
 
-const deadlineT = new Date(SAT); deadlineT.setHours(0,0,0,0);
-const startT   = new Date(SAT); startT.setHours(16,0,0,0);
-const endT     = new Date(SAT); endT.setHours(18,0,0,0);
-
+function sessTimes(){
+  const SAT = SATS[selIdx];
+  const deadlineT = new Date(SAT); deadlineT.setHours(0,0,0,0);
+  const startT = new Date(SAT); startT.setHours(16,0,0,0);
+  const endT = new Date(SAT); endT.setHours(18,0,0,0);
+  return {deadlineT, startT, endT};
+}
 function fmtLeft(ms){
   const d = Math.floor(ms/86400000), h = Math.floor(ms%86400000/3600000), m = Math.floor(ms%3600000/60000);
   return \`\${d > 0 ? d + ' \u5929 ' : ''}\${h} \u5C0F\u6642 \${m} \u5206\`;
 }
 function refreshStatus(){
+  const {deadlineT, startT, endT} = sessTimes();
   const now = new Date(), pill = document.getElementById('statusPill'), cd = document.getElementById('countdown');
   if (now < deadlineT){ pill.className='pill open'; pill.textContent='\u5831\u540D\u4E2D'; cd.textContent=\`\u5831\u540D\u622A\u6B62\u5012\u6578 \${fmtLeft(deadlineT-now)}\`; return 'open'; }
   if (now < startT){ pill.className='pill closed'; pill.textContent='\u540D\u55AE\u9396\u5B9A'; cd.textContent=\`\u958B\u6253\u5012\u6578 \${fmtLeft(startT-now)}\`; return 'locked'; }
@@ -416,22 +441,38 @@ let online = true;
 /* DEMO \u6C99\u76D2\u6A21\u5F0F\uFF08?demo=1\uFF09\uFF1A\u5168\u90E8\u5728\u672C\u9801\u8A18\u61B6\u9AD4\u6A21\u64EC\uFF0C\u4E0D\u78B0\u6B63\u5F0F\u8CC7\u6599\u5EAB */
 const DEMO = new URLSearchParams(location.search).has('demo');
 const demoStore = {
-  signups:[{id:'d1',name:'\u7C73\u9769\u529B',at:1,pos:1},{id:'d2',name:'\u6728\u6BCF\u5973\u81E3',at:2,pos:2},{id:'d3',name:'\u5973\u795E',at:3,pos:5}],
   roster:['Miller','\u5973\u795E','\u7C73\u9769\u529B','\u6728\u6BCF\u5973\u81E3'],
   history:[{date:'2026-08-09',names:['\u7C73\u9769\u529B','\u5973\u795E','Miller']}],
-  court:1
+  weeks:{}
 };
+function demoWeek(date){
+  if (!demoStore.weeks[date]){
+    demoStore.weeks[date] = {
+      signups: date === WEEK_KEYS[0]
+        ? [{id:'d1',name:'\u7C73\u9769\u529B',at:1,pos:1},{id:'d2',name:'\u6728\u6BCF\u5973\u81E3',at:2,pos:2},{id:'d3',name:'\u5973\u795E',at:3,pos:5}]
+        : [],
+      court: 1
+    };
+  }
+  return demoStore.weeks[date];
+}
 function demoApi(path, body){
-  if (path === 'signup' && !demoStore.signups.some(x=>x.name===body.name)){
-    const taken = new Set(demoStore.signups.map(x=>x.pos));
+  const m = path.match(/date=([0-9-]+)/);
+  const date = (body && body.date) || (m && m[1]) || DKEY;
+  const w = demoWeek(date);
+  if (path === 'signup' && !w.signups.some(x=>x.name===body.name)){
+    const taken = new Set(w.signups.map(x=>x.pos));
     let pos = body.pos && !taken.has(body.pos) ? body.pos : null;
     if (!pos){ pos = 1; while (taken.has(pos)) pos++; }
-    demoStore.signups.push({id:'d'+Date.now(), name:body.name, at:Date.now(), pos});
+    w.signups.push({id:'d'+Date.now(), name:body.name, at:Date.now(), pos});
   }
-  if (path === 'cancel') demoStore.signups = demoStore.signups.filter(x=>x.id!==body.id);
+  if (path === 'cancel') w.signups = w.signups.filter(x=>x.id!==body.id);
   if (path === 'addname' && !demoStore.roster.includes(body.name)) demoStore.roster.push(body.name);
-  if (path === 'setcourt') demoStore.court = body.court;
-  return Promise.resolve(JSON.parse(JSON.stringify(demoStore)));
+  if (path === 'setcourt') w.court = body.court;
+  const counts = {};
+  WEEK_KEYS.forEach(k => { counts[k] = demoWeek(k).signups.length; });
+  return Promise.resolve(JSON.parse(JSON.stringify(
+    {signups:w.signups, court:w.court, roster:demoStore.roster, history:demoStore.history, counts})));
 }
 async function api(path, body){
   if (DEMO) return demoApi(path, body);
@@ -447,6 +488,7 @@ function absorb(s){
   if (Array.isArray(s.roster) && s.roster.length) roster = s.roster;
   if (Array.isArray(s.history)) history = s.history;
   if (s.court >= 1) courtNo = s.court;
+  if (s.counts) weekCounts = s.counts;
   if (DEMO) return;
   try{ localStorage.setItem('bd_cache', JSON.stringify({roster, signups, week: DKEY})); }catch(e){}
 }
@@ -457,7 +499,7 @@ function loadCache(){
   }catch(e){}
 }
 async function pull(){
-  try{ absorb(await api(\`state?date=\${DKEY}&hist=1\`)); online = true; }
+  try{ absorb(await api(\`state?date=\${DKEY}&hist=1&all=\${WEEK_KEYS.join(',')}\`)); online = true; }
   catch(e){ online = false; }
   render();
 }
@@ -472,6 +514,16 @@ function chipHTML(p){
 function render(){
   const st = refreshStatus();
   document.getElementById('offlineBox').style.display = online ? 'none' : 'block';
+
+  /* \u5834\u6B21\u65E5\u671F\u8207\u4E09\u9031\u9801\u7C64 */
+  document.getElementById('dateNum').textContent = mdOf(SATS[selIdx]);
+  const labels = ['\u672C\u9031', '\u4E0B\u9031', '\u4E0B\u4E0B\u9031'];
+  document.getElementById('weekTabs').innerHTML = WEEK_KEYS.map((k, i) => {
+    const c = weekCounts[k];
+    return \`<button class="week-tab\${i === selIdx ? ' on' : ''}" data-idx="\${i}">
+      \${labels[i]}<span class="d">\${mdOf(SATS[i])}</span>
+      <span class="c">\${c > 0 ? c + ' \u4EBA\u5DF2\u5831' : '\u5C1A\u7121\u4EBA\u5831\u540D'}</span></button>\`;
+  }).join('');
 
   /* \u5834\u5730\u865F\u540C\u6B65\uFF08\u5718\u9577\u8A2D\u5B9A\uFF09 */
   document.getElementById('courtSel').value = String(courtNo);
@@ -604,6 +656,17 @@ document.body.addEventListener('click', async e => {
     toast(\`\u5DF2\u53D6\u6D88 \${name} \u7684\u5831\u540D\`);
   }catch(e){ online = false; toast('\u9023\u7DDA\u5931\u6557\uFF0C\u8ACB\u518D\u8A66\u4E00\u6B21'); }
   render();
+});
+
+/* \u5207\u63DB\u9031\u6B21 */
+document.getElementById('weekTabs').addEventListener('click', e => {
+  const tab = e.target.closest('.week-tab');
+  if (!tab) return;
+  const i = Number(tab.dataset.idx);
+  if (i === selIdx) return;
+  selIdx = i; DKEY = WEEK_KEYS[i];
+  pendingName = null; signups = []; history = [];
+  render(); pull();
 });
 
 /* \u5718\u9577\u6539\u5834\u5730\u865F\uFF081-6\uFF0C\u5168\u968A\u540C\u6B65\uFF09 */
@@ -750,7 +813,13 @@ var worker_default = {
       if (p === "state") {
         const date = url.searchParams.get("date") || "";
         if (!DATE_RE.test(date)) return J({ error: "bad date" }, 400);
-        return J(await buildState(kv, date, url.searchParams.get("hist") === "1"));
+        const out = await buildState(kv, date, url.searchParams.get("hist") === "1");
+        const all = (url.searchParams.get("all") || "").split(",").filter((k) => DATE_RE.test(k)).slice(0, 6);
+        if (all.length) {
+          out.counts = {};
+          for (const k of all) out.counts[k] = (k === date ? out.signups : await readSignups(kv, k)).length;
+        }
+        return J(out);
       }
       if (req.method !== "POST") return J({ error: "POST required" }, 405);
       const b = await req.json();
@@ -845,7 +914,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-AmZL7X/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-pdyrLU/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -877,7 +946,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-AmZL7X/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-pdyrLU/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

@@ -108,7 +108,13 @@ export default {
       if (p === 'state') {
         const date = url.searchParams.get('date') || '';
         if (!DATE_RE.test(date)) return J({ error: 'bad date' }, 400);
-        return J(await buildState(kv, date, url.searchParams.get('hist') === '1'));
+        const out = await buildState(kv, date, url.searchParams.get('hist') === '1');
+        const all = (url.searchParams.get('all') || '').split(',').filter(k => DATE_RE.test(k)).slice(0, 6);
+        if (all.length) {
+          out.counts = {};
+          for (const k of all) out.counts[k] = (k === date ? out.signups : await readSignups(kv, k)).length;
+        }
+        return J(out);
       }
       if (req.method !== 'POST') return J({ error: 'POST required' }, 405);
       const b = await req.json();
