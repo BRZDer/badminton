@@ -1,0 +1,6 @@
+name = "badminton-signup"
+main = "worker.js"
+compatibility_date = "2026-08-01"
+kv_namespaces = [
+  { binding = "KV", id = "00000000000000000000000000000000" }
+]

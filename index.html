@@ -305,90 +305,97 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
 
 <script>
 /* ================= 設定 ================= */
-const KV = 'https://kvdb.io/BJXjVrWMuJmubr5UFZShUE';   // 共享資料庫（kvdb bucket）
-const DEFAULT_ROSTER = ['Miller'];                      // 初始名單（等 LINE 群截圖後補齊）
+/* 後端：Cloudflare Worker（badminton-signup.brzder.workers.dev）＋ KV
+   在 workers.dev 上同源呼叫；在 GitHub Pages 鏡像上跨域呼叫（Worker 已開 CORS） */
+const API_BASE = location.hostname.endsWith('github.io') ? 'https://badminton-signup.brzder.workers.dev' : '';
 const CAP1 = 8, UNLOCK2 = 12, CAP_TOTAL = 16;
 const POLL_MS = 25000;
 
-/* ================= 場次時間 ================= */
+/* ================= 場次時間 =================
+   報名窗口：上一場結束（週六 18:00）後開放下一週 ＝ 永遠 7 天前開放
+   週五 24:00 截止（給團長時間決定加租）；週六 00:00–16:00 名單鎖定；16:00–18:00 開打中 */
 function sessionSaturday(now = new Date()){
   const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const diff = (6 - d.getDay() + 7) % 7;
   d.setDate(d.getDate() + diff);
-  if (diff === 0 && (now.getHours() > 18 || (now.getHours() === 18 && now.getMinutes() >= 0))) d.setDate(d.getDate() + 7);
+  if (diff === 0 && now.getHours() >= 18) d.setDate(d.getDate() + 7);
   return d;
 }
 const SAT = sessionSaturday();
 const pad = n => String(n).padStart(2, '0');
-const WEEK_KEY = `w_${SAT.getFullYear()}-${pad(SAT.getMonth()+1)}-${pad(SAT.getDate())}`;
+const DKEY = `${SAT.getFullYear()}-${pad(SAT.getMonth()+1)}-${pad(SAT.getDate())}`;
 document.getElementById('dateNum').textContent = `${pad(SAT.getMonth()+1)}.${pad(SAT.getDate())}`;
 
-const startT = new Date(SAT); startT.setHours(16,0,0,0);
-const endT   = new Date(SAT); endT.setHours(18,0,0,0);
+const deadlineT = new Date(SAT); deadlineT.setHours(0,0,0,0);
+const startT   = new Date(SAT); startT.setHours(16,0,0,0);
+const endT     = new Date(SAT); endT.setHours(18,0,0,0);
+
+function fmtLeft(ms){
+  const d = Math.floor(ms/86400000), h = Math.floor(ms%86400000/3600000), m = Math.floor(ms%3600000/60000);
+  return `${d > 0 ? d + ' 天 ' : ''}${h} 小時 ${m} 分`;
+}
 function refreshStatus(){
   const now = new Date(), pill = document.getElementById('statusPill'), cd = document.getElementById('countdown');
-  if (now >= startT && now < endT){ pill.className='pill live'; pill.textContent='開打中'; cd.textContent='打起來！'; return 'live'; }
-  if (now >= endT){ pill.className='pill closed'; pill.textContent='本週已收場'; cd.textContent=''; return 'closed'; }
-  pill.className='pill open'; pill.textContent='報名中';
-  const ms = startT - now, dDay = Math.floor(ms/86400000), h = Math.floor(ms%86400000/3600000), m = Math.floor(ms%3600000/60000);
-  cd.textContent = `開打倒數 ${dDay > 0 ? dDay + ' 天 ' : ''}${h} 小時 ${m} 分`;
-  return 'open';
+  if (now < deadlineT){ pill.className='pill open'; pill.textContent='報名中'; cd.textContent=`報名截止倒數 ${fmtLeft(deadlineT-now)}`; return 'open'; }
+  if (now < startT){ pill.className='pill closed'; pill.textContent='名單鎖定'; cd.textContent=`開打倒數 ${fmtLeft(startT-now)}`; return 'locked'; }
+  if (now < endT){ pill.className='pill live'; pill.textContent='開打中'; cd.textContent='打起來！'; return 'live'; }
+  pill.className='pill closed'; pill.textContent='本週已收場'; cd.textContent=''; return 'closed';
 }
 
-/* ================= 資料層（kvdb + localStorage 快取） ================= */
-let roster = [...DEFAULT_ROSTER];
-let signups = [];   // [{n:'名字', t:timestamp}]
+/* ================= 資料層 ================= */
+let roster = ['Miller'];
+let signups = [];   // [{id,name,at}] id 由伺服器發
+let history = [];   // [{date,names:[]}]
 let online = true;
 
-async function kvGet(key){
-  const r = await fetch(`${KV}/${key}?t=${Date.now()}`, {cache:'no-store'});
-  if (r.status === 404) return null;
-  if (!r.ok) throw new Error('GET ' + r.status);
-  return JSON.parse(await r.text());
+/* DEMO 沙盒模式（?demo=1）：全部在本頁記憶體模擬，不碰正式資料庫 */
+const DEMO = new URLSearchParams(location.search).has('demo');
+const demoStore = {
+  signups:[{id:'d1',name:'米革力',at:1},{id:'d2',name:'木每女臣',at:2},{id:'d3',name:'女神',at:3}],
+  roster:['Miller','女神','米革力','木每女臣'],
+  history:[{date:'2026-08-09',names:['米革力','女神','Miller']}]
+};
+function demoApi(path, body){
+  if (path === 'signup' && !demoStore.signups.some(x=>x.name===body.name))
+    demoStore.signups.push({id:'d'+Date.now(), name:body.name, at:Date.now()});
+  if (path === 'cancel') demoStore.signups = demoStore.signups.filter(x=>x.id!==body.id);
+  if (path === 'addname' && !demoStore.roster.includes(body.name)) demoStore.roster.push(body.name);
+  return Promise.resolve(JSON.parse(JSON.stringify(demoStore)));
 }
-async function kvPut(key, val){
-  const r = await fetch(`${KV}/${key}`, {method:'PUT', body: JSON.stringify(val)});
-  if (!r.ok) throw new Error('PUT ' + r.status);
+async function api(path, body){
+  if (DEMO) return demoApi(path, body);
+  const r = await fetch(API_BASE + '/api/' + path, body
+    ? {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body)}
+    : {cache:'no-store'});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
 }
-function cache(){ localStorage.setItem('bd_cache', JSON.stringify({roster, signups, week: WEEK_KEY})); }
+function absorb(s){
+  if (!s) return;
+  if (Array.isArray(s.signups)) signups = s.signups;
+  if (Array.isArray(s.roster) && s.roster.length) roster = s.roster;
+  if (Array.isArray(s.history)) history = s.history;
+  if (DEMO) return;
+  try{ localStorage.setItem('bd_cache', JSON.stringify({roster, signups, week: DKEY})); }catch(e){}
+}
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem('bd_cache') || 'null');
-    if (c && c.week === WEEK_KEY){ roster = c.roster; signups = c.signups; }
-    else if (c){ roster = c.roster; }
+    if (c){ roster = c.roster || roster; if (c.week === DKEY) signups = c.signups || []; }
   }catch(e){}
 }
-
 async function pull(){
-  try{
-    const [r, s] = await Promise.all([kvGet('roster'), kvGet(WEEK_KEY)]);
-    roster = (Array.isArray(r) && r.length) ? r : roster;
-    signups = Array.isArray(s) ? s : [];
-    online = true; cache();
-  }catch(e){ online = false; }
+  try{ absorb(await api(`state?date=${DKEY}&hist=1`)); online = true; }
+  catch(e){ online = false; }
   render();
-}
-
-/* 寫入前先拉最新資料合併，降低互相蓋寫機率 */
-async function mutate(fn){
-  try{
-    const s = await kvGet(WEEK_KEY);
-    signups = Array.isArray(s) ? s : [];
-  }catch(e){ online = false; render(); toast('連線失敗，請再試一次'); return false; }
-  const changed = fn();
-  if (!changed) { render(); return false; }
-  try{ await kvPut(WEEK_KEY, signups); online = true; cache(); }
-  catch(e){ online = false; toast('寫入失敗，請再試一次'); }
-  render();
-  return online;
 }
 
 /* ================= 畫面 ================= */
-const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-function chipHTML(i, name){
-  return `<div class="slot filled" data-name="${esc(name)}" title="點一下取消報名">
-    <span class="num">${i+1}</span>${esc(name)}</div>`;
+function chipHTML(i, p){
+  return `<div class="slot filled" data-id="${esc(p.id)}" data-name="${esc(p.name)}" title="點一下取消報名">
+    <span class="num">${i+1}</span>${esc(p.name)}</div>`;
 }
 function render(){
   const st = refreshStatus();
@@ -397,7 +404,7 @@ function render(){
   /* 第一場 8 格 */
   const s1 = document.getElementById('slots1');
   s1.innerHTML = Array.from({length: CAP1}, (_, i) =>
-    signups[i] ? chipHTML(i, signups[i].n)
+    signups[i] ? chipHTML(i, signups[i])
                : `<div class="slot empty">NO.${i+1}</div>`).join('');
   document.getElementById('count1').innerHTML = `${Math.min(signups.length, CAP1)}<small> / 8</small>`;
 
@@ -410,7 +417,7 @@ function render(){
       <div class="bar"><i style="width:${Math.min(n/UNLOCK2*100,100)}%"></i></div></div></div>`;
   } else {
     const second = signups.slice(CAP1, CAP_TOTAL);
-    const chips = second.map((p,i)=>chipHTML(CAP1+i, p.n)).join('');
+    const chips = second.map((p,i)=>chipHTML(CAP1+i, p)).join('');
     if (n < UNLOCK2){
       c2.innerHTML = `<div class="court2-status"><span class="lock">⏳</span><div class="txt">
         <b>第二場候補中（${n}/${UNLOCK2}）</b>　再 ${UNLOCK2-n} 人就成立，先排隊：
@@ -428,67 +435,73 @@ function render(){
   const bench = document.getElementById('benchSec');
   bench.innerHTML = n > CAP_TOTAL
     ? `<div class="bench"><h3>WAITLIST／候補席</h3><div class="bench-chips">
-        ${signups.slice(CAP_TOTAL).map((p,i)=>chipHTML(CAP_TOTAL+i,p.n)).join('')}</div></div>`
+        ${signups.slice(CAP_TOTAL).map((p,i)=>chipHTML(CAP_TOTAL+i,p)).join('')}</div></div>`
     : '';
 
   /* 下拉選單：名單－已報名 */
   const sel = document.getElementById('nameSel'), go = document.getElementById('goBtn');
-  const signed = new Set(signups.map(p => p.n));
+  const signed = new Set(signups.map(p => p.name));
   const avail = roster.filter(x => !signed.has(x));
   if (st !== 'open'){
-    sel.innerHTML = `<option>${st === 'live' ? '開打中，本週報名已截止' : '本週已收場，等下週開放'}</option>`;
+    sel.innerHTML = `<option>${st === 'locked' ? '已截止，名單鎖定備戰' : st === 'live' ? '開打中！' : '本週已收場，等下週開放'}</option>`;
     go.disabled = true;
   } else if (!avail.length){
     sel.innerHTML = `<option>全員都報名了 💪</option>`; go.disabled = true;
   } else {
+    const cur = sel.value;
     sel.innerHTML = `<option value="" disabled selected>選你的名字</option>` +
       avail.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    if (avail.includes(cur)) sel.value = cur;
     go.disabled = false;
   }
+
+  renderHistory();
+}
+function renderHistory(){
+  const box = document.getElementById('historyBody');
+  box.innerHTML = history.length
+    ? history.map(h => `<div class="history-item"><span class="d">${esc(h.date.slice(5).replace('-','.'))}</span>
+        <span class="names">${h.names.length} 人：${h.names.map(esc).join('、')}</span></div>`).join('')
+    : '<div class="hint">還沒有過往紀錄，本週打完就有了。</div>';
 }
 
 /* ================= 互動 ================= */
 document.getElementById('goBtn').addEventListener('click', async () => {
   const name = document.getElementById('nameSel').value;
   if (!name) { toast('先選名字再報名'); return; }
-  const ok = await mutate(() => {
-    if (signups.some(p => p.n === name)) { toast(`${name} 已經報過了`); return false; }
-    signups.push({n: name, t: Date.now()});
-    return true;
-  });
-  if (ok) toast(`✅ ${name} 上場！目前 ${signups.length} 人`);
+  try{
+    absorb(await api('signup', {date: DKEY, name}));
+    online = true;
+    toast(`✅ ${name} 上場！目前 ${signups.length} 人`);
+  }catch(e){ online = false; toast('連線失敗，請再試一次'); }
+  render();
 });
 
 /* 點名字晶片 → 取消報名 */
 document.body.addEventListener('click', async e => {
   const chip = e.target.closest('.slot.filled');
   if (!chip) return;
-  const name = chip.dataset.name;
-  if (refreshStatus() !== 'open'){ toast('本週已截止，名單鎖定'); return; }
+  if (refreshStatus() !== 'open'){ toast('已截止，名單鎖定'); return; }
+  const {id, name} = chip.dataset;
   if (!confirm(`確定幫「${name}」取消這週的報名嗎？`)) return;
-  const ok = await mutate(() => {
-    const i = signups.findIndex(p => p.n === name);
-    if (i < 0) return false;
-    signups.splice(i, 1);
-    return true;
-  });
-  if (ok) toast(`已取消 ${name} 的報名`);
+  try{
+    absorb(await api('cancel', {date: DKEY, id}));
+    online = true;
+    toast(`已取消 ${name} 的報名`);
+  }catch(e){ online = false; toast('連線失敗，請再試一次'); }
+  render();
 });
 
-/* 新增名字（roster 也走先拉再寫） */
+/* 新增名字（進共享 roster） */
 document.getElementById('addBtn').addEventListener('click', async () => {
   const inp = document.getElementById('newName');
   const name = inp.value.trim();
   if (!name) return;
   if (name.length > 12) { toast('名字太長了'); return; }
+  if (roster.includes(name)) { toast('名單裡已經有這個名字'); inp.value = ''; render(); return; }
   try{
-    const r = await kvGet('roster');
-    roster = (Array.isArray(r) && r.length) ? r : roster;
-    if (roster.includes(name)) { toast('名單裡已經有這個名字'); inp.value=''; render(); return; }
-    roster.push(name);
-    roster.sort((a,b) => a.localeCompare(b, 'zh-Hant'));
-    await kvPut('roster', roster);
-    online = true; cache(); inp.value = '';
+    absorb(await api('addname', {name, date: DKEY}));
+    online = true; inp.value = '';
     toast(`已把 ${name} 加進名單`);
   }catch(e){ online = false; toast('連線失敗，請再試一次'); }
   render();
@@ -500,31 +513,18 @@ document.getElementById('shareBtn').addEventListener('click', async () => {
   catch(e){ prompt('複製這個連結：', location.href); }
 });
 
-/* 過去紀錄：抓最近 4 個已過去的週六 */
-async function loadHistory(){
-  const box = document.getElementById('historyBody');
-  const items = [];
-  for (let i = 1; i <= 4; i++){
-    const d = new Date(SAT); d.setDate(d.getDate() - 7*i);
-    const key = `w_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    try{
-      const s = await kvGet(key);
-      if (Array.isArray(s) && s.length)
-        items.push(`<div class="history-item"><span class="d">${pad(d.getMonth()+1)}.${pad(d.getDate())}</span>
-          <span class="names">${s.length} 人：${s.map(p=>esc(p.n)).join('、')}</span></div>`);
-    }catch(e){}
-  }
-  box.innerHTML = items.length ? items.join('') : '<div class="hint">還沒有過往紀錄，本週打完就有了。</div>';
-}
-document.getElementById('historyFold').addEventListener('toggle', function(){ if (this.open) loadHistory(); }, {once:true});
-
 /* ================= 啟動 ================= */
 function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600);
 }
-loadCache(); render(); pull();
+if (DEMO){
+  const pill = document.createElement('span');
+  pill.className = 'pill closed'; pill.textContent = 'DEMO 預覽';
+  document.querySelector('.status-row').appendChild(pill);
+} else { loadCache(); }
+render(); pull();
 setInterval(pull, POLL_MS);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
 setInterval(refreshStatus, 30000);
