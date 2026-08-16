@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>淡水乳酸堆起｜週六羽球報名</title>
+<meta property="og:title" content="淡水乳酸堆起｜週六羽球報名">
+<meta property="og:description" content="每週六 16:00–18:00 淡水國民運動中心，點名字上場！">
+<meta name="theme-color" content="#0c352a">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Chocolate+Classical+Sans&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* === DESIGN TOKENS：深墨綠球場 × 米白場線 × 螢光羽球黃 === */
+:root{
+  --court:#0c352a;          /* 頁面底：深墨綠 */
+  --court-mat:#155941;      /* 球場地膠綠 */
+  --court-mat-2:#1b6a4e;
+  --line:#efe9d8;           /* 場線米白 */
+  --ink:#f4f1e6;            /* 主文字 */
+  --dim:#9db8ab;            /* 次要文字 */
+  --lime:#d9ff3e;           /* 螢光黃：CTA / 強調 */
+  --coral:#ff6a4d;          /* 珊瑚紅：警示 / 團長提醒 */
+  --chip:#f4f1e6;
+  --chip-ink:#0c352a;
+  --font-display:"Chocolate Classical Sans","Noto Sans TC",sans-serif;
+  --font-num:"Anton","Noto Sans TC",sans-serif;
+  --font-body:"Noto Sans TC",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);
+  background:
+    radial-gradient(1200px 600px at 50% -200px, #17553f 0%, transparent 60%),
+    repeating-linear-gradient(0deg, transparent 0 46px, rgba(239,233,216,.035) 46px 48px),
+    var(--court);
+  color:var(--ink);
+  min-height:100dvh;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom));
+}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+
+/* === 進場動畫：整頁一次性 stagger === */
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.rise{opacity:0;animation:rise .6s cubic-bezier(.2,.7,.2,1) forwards}
+@media (prefers-reduced-motion: reduce){
+  .rise{animation:none;opacity:1}
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+
+/* === 海報頭 === */
+header{padding:26px 0 10px;position:relative}
+.team-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.team-badge{
+  display:inline-block;font-family:var(--font-display);font-size:15px;letter-spacing:.35em;
+  color:var(--court);background:var(--lime);padding:5px 10px 5px 13px;border-radius:3px;
+  box-shadow:3px 3px 0 rgba(0,0,0,.35);
+}
+.btn-ghost{
+  background:transparent;border:1px solid rgba(239,233,216,.35);color:var(--ink);
+  font-family:var(--font-body);font-size:12px;padding:7px 12px;border-radius:99px;cursor:pointer;
+}
+.btn-ghost:active{background:rgba(239,233,216,.12)}
+h1{
+  font-family:var(--font-display);font-weight:400;
+  font-size:clamp(44px,13vw,64px);line-height:1.08;margin-top:16px;
+  text-shadow:0 2px 0 rgba(0,0,0,.25);
+}
+h1 .accent{color:var(--lime)}
+.date-block{display:flex;align-items:flex-end;gap:14px;margin-top:14px;flex-wrap:wrap}
+.date-num{font-family:var(--font-num);font-size:clamp(56px,17vw,84px);line-height:.9;letter-spacing:.02em;color:var(--line)}
+.date-meta{padding-bottom:6px}
+.date-meta .weekday{font-family:var(--font-display);font-size:20px;color:var(--lime);letter-spacing:.2em}
+.date-meta .time{font-family:var(--font-num);font-size:20px;letter-spacing:.05em;color:var(--ink)}
+.venue{margin-top:10px;font-size:14px;color:var(--dim);letter-spacing:.08em}
+.venue b{color:var(--ink);font-weight:500}
+.status-row{display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap}
+.pill{font-size:12px;padding:5px 12px;border-radius:99px;letter-spacing:.15em;font-weight:700}
+.pill.open{background:var(--lime);color:var(--court)}
+.pill.live{background:var(--coral);color:#fff}
+.pill.closed{background:rgba(239,233,216,.2);color:var(--ink)}
+.countdown{font-size:12px;color:var(--dim);letter-spacing:.05em}
+
+/* === 球場（SVG 畫線 + 名字上場） === */
+.court-sec{margin-top:22px;position:relative}
+.court-card{position:relative;border-radius:14px;overflow:hidden;
+  background:linear-gradient(160deg,var(--court-mat-2),var(--court-mat) 55%);
+  box-shadow:0 18px 44px -18px rgba(0,0,0,.6), inset 0 0 0 1px rgba(239,233,216,.08);
+}
+.court-svg{display:block;width:100%;height:auto}
+.court-svg line,.court-svg rect{stroke:var(--line);stroke-width:4;fill:none;opacity:.9}
+.court-svg .net{stroke-dasharray:14 10;stroke-width:5;opacity:.55}
+/* 場線繪製動畫 */
+.court-svg .draw{stroke-dasharray:2200;stroke-dashoffset:2200;animation:draw 1.6s .3s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.court-label{
+  position:absolute;top:10px;left:12px;font-family:var(--font-num);font-size:13px;
+  letter-spacing:.25em;color:var(--line);opacity:.8;
+}
+.court-count{
+  position:absolute;top:8px;right:12px;font-family:var(--font-num);font-size:22px;color:var(--lime);
+}
+.court-count small{font-size:12px;color:var(--line);opacity:.7}
+/* 8 個站位：疊在球場上 */
+.slots{
+  position:absolute;inset:0;display:grid;
+  grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,1fr);
+  padding:14% 12% 10%;gap:6px 14%;
+  align-items:center;justify-items:center;
+}
+.slot{
+  width:100%;max-width:150px;min-height:44px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  font-size:15px;font-weight:700;letter-spacing:.05em;text-align:center;
+  transition:transform .15s;position:relative;padding:4px 6px;
+}
+.slot.empty{
+  border:2px dashed rgba(239,233,216,.4);color:rgba(239,233,216,.5);
+  font-family:var(--font-num);font-size:14px;font-weight:400;
+}
+.slot.filled{
+  background:var(--chip);color:var(--chip-ink);cursor:pointer;
+  box-shadow:0 4px 0 rgba(0,0,0,.3);
+  animation:pop .35s cubic-bezier(.2,.9,.3,1.4);
+}
+.slot.filled:active{transform:translateY(2px)}
+.slot.filled .num{
+  font-family:var(--font-num);font-size:11px;color:var(--court-mat);
+  position:absolute;top:3px;left:7px;font-weight:400;
+}
+@keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* === 第二場 === */
+.court2-wrap{margin-top:14px}
+.court2-status{
+  border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;
+  background:rgba(239,233,216,.06);border:1px dashed rgba(239,233,216,.25);
+}
+.court2-status .lock{font-size:26px}
+.court2-status .txt{flex:1;font-size:13px;color:var(--dim);line-height:1.6}
+.court2-status .txt b{color:var(--ink)}
+.bar{height:6px;border-radius:99px;background:rgba(239,233,216,.15);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--lime);border-radius:99px;transition:width .5s ease}
+.captain-banner{
+  margin-top:14px;border-radius:12px;padding:13px 16px;font-size:14px;line-height:1.65;
+  background:var(--coral);color:#fff;font-weight:700;
+  box-shadow:0 10px 26px -10px rgba(255,106,77,.55);
+  animation:pop .4s cubic-bezier(.2,.9,.3,1.3);
+}
+/* === 候補席 === */
+.bench{margin-top:14px;border-radius:14px;padding:14px 16px;background:rgba(0,0,0,.22)}
+.bench h3{font-family:var(--font-num);font-size:13px;letter-spacing:.25em;color:var(--dim);margin-bottom:10px}
+.bench-chips{display:flex;flex-wrap:wrap;gap:8px}
+.bench-chips .slot.filled{max-width:none;width:auto;min-height:36px;font-size:13px;padding:6px 14px}
+.bench-chips .slot.filled .num{position:static;margin-right:2px}
+
+/* === 底部撕票報名列 === */
+.ticket-bar{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  background:var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  box-shadow:0 -14px 34px rgba(0,0,0,.45);
+}
+.ticket-bar::before{ /* 撕票孔 */
+  content:"";position:absolute;top:-7px;left:0;right:0;height:14px;
+  background:radial-gradient(circle at 8px 7px, var(--court) 5px, transparent 5.5px);
+  background-size:26px 14px;background-repeat:repeat-x;
+}
+.ticket-inner{max-width:520px;margin:0 auto;display:flex;gap:10px}
+.name-select{
+  flex:1;appearance:none;-webkit-appearance:none;
+  font-family:var(--font-body);font-size:16px;font-weight:700;color:var(--court);
+  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%230c352a' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center;
+  border:2px solid var(--court);border-radius:10px;padding:12px 38px 12px 14px;min-width:0;
+}
+.btn-go{
+  font-family:var(--font-display);font-size:18px;letter-spacing:.2em;
+  background:var(--court);color:var(--lime);border:none;border-radius:10px;
+  padding:12px 20px 12px 23px;cursor:pointer;white-space:nowrap;
+}
+.btn-go:disabled{opacity:.45}
+.btn-go:active{transform:translateY(1px)}
+
+/* === 折疊區 === */
+.fold{margin-top:16px;border-radius:12px;background:rgba(239,233,216,.05);overflow:hidden}
+.fold summary{
+  list-style:none;cursor:pointer;padding:13px 16px;font-size:13px;letter-spacing:.15em;
+  color:var(--dim);display:flex;justify-content:space-between;align-items:center;user-select:none;
+}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary::after{content:"＋";font-size:15px;transition:transform .25s}
+.fold[open] summary::after{transform:rotate(45deg)}
+.fold-body{padding:2px 16px 16px}
+.add-row{display:flex;gap:8px}
+.add-row input{
+  flex:1;font-family:var(--font-body);font-size:15px;padding:10px 12px;border-radius:9px;
+  border:1px solid rgba(239,233,216,.3);background:rgba(0,0,0,.25);color:var(--ink);min-width:0;
+}
+.add-row input::placeholder{color:rgba(157,184,171,.6)}
+.btn-add{background:var(--lime);color:var(--court);font-weight:900;border:none;border-radius:9px;padding:10px 16px;font-size:14px;cursor:pointer}
+.hint{font-size:12px;color:var(--dim);margin-top:9px;line-height:1.6}
+.history-item{padding:10px 0;border-bottom:1px dashed rgba(239,233,216,.15);font-size:13px;line-height:1.7}
+.history-item:last-child{border-bottom:none}
+.history-item .d{font-family:var(--font-num);color:var(--lime);letter-spacing:.05em;margin-right:8px}
+.history-item .names{color:var(--dim)}
+
+/* === 提示 toast / 連線狀態 === */
+#toast{
+  position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+  background:#000c;color:#fff;font-size:14px;padding:10px 18px;border-radius:99px;
+  opacity:0;pointer-events:none;transition:.3s;z-index:60;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%)}
+.offline{
+  margin-top:14px;border-radius:10px;padding:11px 14px;font-size:13px;line-height:1.6;
+  background:rgba(255,106,77,.15);border:1px solid rgba(255,106,77,.5);color:#ffb3a3;display:none;
+}
+footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.5);letter-spacing:.2em;padding-bottom:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="team-row rise" style="animation-delay:.05s">
+      <span class="team-badge">淡水乳酸堆起</span>
+      <button class="btn-ghost" id="shareBtn">🔗 複製連結</button>
+    </div>
+    <h1 class="rise" style="animation-delay:.12s">週六<span class="accent">開打</span><br>名字上場</h1>
+    <div class="date-block rise" style="animation-delay:.2s">
+      <div class="date-num" id="dateNum">--.--</div>
+      <div class="date-meta">
+        <div class="weekday">SAT／週六</div>
+        <div class="time">16:00–18:00</div>
+      </div>
+    </div>
+    <div class="venue rise" style="animation-delay:.26s">📍 <b>淡水國民運動中心</b>　羽球場</div>
+    <div class="status-row rise" style="animation-delay:.3s">
+      <span class="pill open" id="statusPill">報名中</span>
+      <span class="countdown" id="countdown"></span>
+    </div>
+  </header>
+
+  <div class="offline" id="offlineBox">⚠️ 連線不到報名資料庫，顯示的是快取名單。請檢查網路後重新整理。</div>
+
+  <!-- 第一場：球場即名單 -->
+  <section class="court-sec rise" style="animation-delay:.36s">
+    <div class="court-card">
+      <svg class="court-svg" viewBox="0 0 610 900" aria-hidden="true">
+        <rect class="draw" x="30" y="30" width="550" height="840" rx="2"/>
+        <line class="draw" x1="76" y1="30" x2="76" y2="870"/>
+        <line class="draw" x1="534" y1="30" x2="534" y2="870"/>
+        <line class="draw" x1="30" y1="118" x2="580" y2="118"/>
+        <line class="draw" x1="30" y1="782" x2="580" y2="782"/>
+        <line class="draw" x1="30" y1="330" x2="580" y2="330"/>
+        <line class="draw" x1="30" y1="570" x2="580" y2="570"/>
+        <line class="draw" x1="305" y1="30" x2="305" y2="330"/>
+        <line class="draw" x1="305" y1="570" x2="305" y2="870"/>
+        <line class="net" x1="18" y1="450" x2="592" y2="450"/>
+      </svg>
+      <div class="court-label">COURT 1</div>
+      <div class="court-count" id="count1">0<small> / 8</small></div>
+      <div class="slots" id="slots1"></div>
+    </div>
+  </section>
+
+  <!-- 第二場 -->
+  <section class="court2-wrap rise" style="animation-delay:.42s" id="court2Sec"></section>
+
+  <!-- 候補席 -->
+  <section id="benchSec"></section>
+
+  <!-- 新增名字 -->
+  <details class="fold rise" style="animation-delay:.48s">
+    <summary>找不到名字？新增隊員</summary>
+    <div class="fold-body">
+      <div class="add-row">
+        <input id="newName" maxlength="12" placeholder="輸入名字（同 LINE 群暱稱）">
+        <button class="btn-add" id="addBtn">加入</button>
+      </div>
+      <div class="hint">加入後所有人的下拉選單都會出現這個名字，只需要加一次。</div>
+    </div>
+  </details>
+
+  <!-- 過去紀錄 -->
+  <details class="fold rise" style="animation-delay:.52s" id="historyFold">
+    <summary>過去幾週紀錄</summary>
+    <div class="fold-body" id="historyBody"><div class="hint">載入中⋯</div></div>
+  </details>
+
+  <footer>TAMSUI LACTIC ACID CLUB · EVERY SATURDAY</footer>
+</div>
+
+<!-- 撕票報名列 -->
+<div class="ticket-bar">
+  <div class="ticket-inner">
+    <select class="name-select" id="nameSel"><option>載入中⋯</option></select>
+    <button class="btn-go" id="goBtn" disabled>報名</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= 設定 ================= */
+const KV = 'https://kvdb.io/BJXjVrWMuJmubr5UFZShUE';   // 共享資料庫（kvdb bucket）
+const DEFAULT_ROSTER = ['Miller'];                      // 初始名單（等 LINE 群截圖後補齊）
+const CAP1 = 8, UNLOCK2 = 12, CAP_TOTAL = 16;
+const POLL_MS = 25000;
+
+/* ================= 場次時間 ================= */
+function sessionSaturday(now = new Date()){
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = (6 - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + diff);
+  if (diff === 0 && (now.getHours() > 18 || (now.getHours() === 18 && now.getMinutes() >= 0))) d.setDate(d.getDate() + 7);
+  return d;
+}
+const SAT = sessionSaturday();
+const pad = n => String(n).padStart(2, '0');
+const WEEK_KEY = `w_${SAT.getFullYear()}-${pad(SAT.getMonth()+1)}-${pad(SAT.getDate())}`;
+document.getElementById('dateNum').textContent = `${pad(SAT.getMonth()+1)}.${pad(SAT.getDate())}`;
+
+const startT = new Date(SAT); startT.setHours(16,0,0,0);
+const endT   = new Date(SAT); endT.setHours(18,0,0,0);
+function refreshStatus(){
+  const now = new Date(), pill = document.getElementById('statusPill'), cd = document.getElementById('countdown');
+  if (now >= startT && now < endT){ pill.className='pill live'; pill.textContent='開打中'; cd.textContent='打起來！'; return 'live'; }
+  if (now >= endT){ pill.className='pill closed'; pill.textContent='本週已收場'; cd.textContent=''; return 'closed'; }
+  pill.className='pill open'; pill.textContent='報名中';
+  const ms = startT - now, dDay = Math.floor(ms/86400000), h = Math.floor(ms%86400000/3600000), m = Math.floor(ms%3600000/60000);
+  cd.textContent = `開打倒數 ${dDay > 0 ? dDay + ' 天 ' : ''}${h} 小時 ${m} 分`;
+  return 'open';
+}
+
+/* ================= 資料層（kvdb + localStorage 快取） ================= */
+let roster = [...DEFAULT_ROSTER];
+let signups = [];   // [{n:'名字', t:timestamp}]
+let online = true;
+
+async function kvGet(key){
+  const r = await fetch(`${KV}/${key}?t=${Date.now()}`, {cache:'no-store'});
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error('GET ' + r.status);
+  return JSON.parse(await r.text());
+}
+async function kvPut(key, val){
+  const r = await fetch(`${KV}/${key}`, {method:'PUT', body: JSON.stringify(val)});
+  if (!r.ok) throw new Error('PUT ' + r.status);
+}
+function cache(){ localStorage.setItem('bd_cache', JSON.stringify({roster, signups, week: WEEK_KEY})); }
+function loadCache(){
+  try{
+    const c = JSON.parse(localStorage.getItem('bd_cache') || 'null');
+    if (c && c.week === WEEK_KEY){ roster = c.roster; signups = c.signups; }
+    else if (c){ roster = c.roster; }
+  }catch(e){}
+}
+
+async function pull(){
+  try{
+    const [r, s] = await Promise.all([kvGet('roster'), kvGet(WEEK_KEY)]);
+    roster = (Array.isArray(r) && r.length) ? r : roster;
+    signups = Array.isArray(s) ? s : [];
+    online = true; cache();
+  }catch(e){ online = false; }
+  render();
+}
+
+/* 寫入前先拉最新資料合併，降低互相蓋寫機率 */
+async function mutate(fn){
+  try{
+    const s = await kvGet(WEEK_KEY);
+    signups = Array.isArray(s) ? s : [];
+  }catch(e){ online = false; render(); toast('連線失敗，請再試一次'); return false; }
+  const changed = fn();
+  if (!changed) { render(); return false; }
+  try{ await kvPut(WEEK_KEY, signups); online = true; cache(); }
+  catch(e){ online = false; toast('寫入失敗，請再試一次'); }
+  render();
+  return online;
+}
+
+/* ================= 畫面 ================= */
+const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function chipHTML(i, name){
+  return `<div class="slot filled" data-name="${esc(name)}" title="點一下取消報名">
+    <span class="num">${i+1}</span>${esc(name)}</div>`;
+}
+function render(){
+  const st = refreshStatus();
+  document.getElementById('offlineBox').style.display = online ? 'none' : 'block';
+
+  /* 第一場 8 格 */
+  const s1 = document.getElementById('slots1');
+  s1.innerHTML = Array.from({length: CAP1}, (_, i) =>
+    signups[i] ? chipHTML(i, signups[i].n)
+               : `<div class="slot empty">NO.${i+1}</div>`).join('');
+  document.getElementById('count1').innerHTML = `${Math.min(signups.length, CAP1)}<small> / 8</small>`;
+
+  /* 第二場 */
+  const c2 = document.getElementById('court2Sec');
+  const n = signups.length;
+  if (n <= CAP1){
+    c2.innerHTML = `<div class="court2-status"><span class="lock">🔒</span><div class="txt">
+      <b>第二場未開放</b>　報名滿 ${UNLOCK2} 人自動成立第二場
+      <div class="bar"><i style="width:${Math.min(n/UNLOCK2*100,100)}%"></i></div></div></div>`;
+  } else {
+    const second = signups.slice(CAP1, CAP_TOTAL);
+    const chips = second.map((p,i)=>chipHTML(CAP1+i, p.n)).join('');
+    if (n < UNLOCK2){
+      c2.innerHTML = `<div class="court2-status"><span class="lock">⏳</span><div class="txt">
+        <b>第二場候補中（${n}/${UNLOCK2}）</b>　再 ${UNLOCK2-n} 人就成立，先排隊：
+        <div class="bench-chips" style="margin-top:9px">${chips}</div>
+        <div class="bar"><i style="width:${n/UNLOCK2*100}%"></i></div></div></div>`;
+    } else {
+      c2.innerHTML = `<div class="captain-banner">🎉 滿 ${UNLOCK2} 人，第二場成立！<br>團長記得去加租第二面場地～</div>
+        <div class="court2-status" style="margin-top:12px"><span class="lock">🏸</span><div class="txt">
+        <b>第二場名單（${second.length}/8）</b>
+        <div class="bench-chips" style="margin-top:9px">${chips}</div></div></div>`;
+    }
+  }
+
+  /* 候補（>16） */
+  const bench = document.getElementById('benchSec');
+  bench.innerHTML = n > CAP_TOTAL
+    ? `<div class="bench"><h3>WAITLIST／候補席</h3><div class="bench-chips">
+        ${signups.slice(CAP_TOTAL).map((p,i)=>chipHTML(CAP_TOTAL+i,p.n)).join('')}</div></div>`
+    : '';
+
+  /* 下拉選單：名單－已報名 */
+  const sel = document.getElementById('nameSel'), go = document.getElementById('goBtn');
+  const signed = new Set(signups.map(p => p.n));
+  const avail = roster.filter(x => !signed.has(x));
+  if (st !== 'open'){
+    sel.innerHTML = `<option>${st === 'live' ? '開打中，本週報名已截止' : '本週已收場，等下週開放'}</option>`;
+    go.disabled = true;
+  } else if (!avail.length){
+    sel.innerHTML = `<option>全員都報名了 💪</option>`; go.disabled = true;
+  } else {
+    sel.innerHTML = `<option value="" disabled selected>選你的名字</option>` +
+      avail.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    go.disabled = false;
+  }
+}
+
+/* ================= 互動 ================= */
+document.getElementById('goBtn').addEventListener('click', async () => {
+  const name = document.getElementById('nameSel').value;
+  if (!name) { toast('先選名字再報名'); return; }
+  const ok = await mutate(() => {
+    if (signups.some(p => p.n === name)) { toast(`${name} 已經報過了`); return false; }
+    signups.push({n: name, t: Date.now()});
+    return true;
+  });
+  if (ok) toast(`✅ ${name} 上場！目前 ${signups.length} 人`);
+});
+
+/* 點名字晶片 → 取消報名 */
+document.body.addEventListener('click', async e => {
+  const chip = e.target.closest('.slot.filled');
+  if (!chip) return;
+  const name = chip.dataset.name;
+  if (refreshStatus() !== 'open'){ toast('本週已截止，名單鎖定'); return; }
+  if (!confirm(`確定幫「${name}」取消這週的報名嗎？`)) return;
+  const ok = await mutate(() => {
+    const i = signups.findIndex(p => p.n === name);
+    if (i < 0) return false;
+    signups.splice(i, 1);
+    return true;
+  });
+  if (ok) toast(`已取消 ${name} 的報名`);
+});
+
+/* 新增名字（roster 也走先拉再寫） */
+document.getElementById('addBtn').addEventListener('click', async () => {
+  const inp = document.getElementById('newName');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (name.length > 12) { toast('名字太長了'); return; }
+  try{
+    const r = await kvGet('roster');
+    roster = (Array.isArray(r) && r.length) ? r : roster;
+    if (roster.includes(name)) { toast('名單裡已經有這個名字'); inp.value=''; render(); return; }
+    roster.push(name);
+    roster.sort((a,b) => a.localeCompare(b, 'zh-Hant'));
+    await kvPut('roster', roster);
+    online = true; cache(); inp.value = '';
+    toast(`已把 ${name} 加進名單`);
+  }catch(e){ online = false; toast('連線失敗，請再試一次'); }
+  render();
+});
+
+/* 分享 */
+document.getElementById('shareBtn').addEventListener('click', async () => {
+  try{ await navigator.clipboard.writeText(location.href); toast('連結已複製，貼到 LINE 群吧'); }
+  catch(e){ prompt('複製這個連結：', location.href); }
+});
+
+/* 過去紀錄：抓最近 4 個已過去的週六 */
+async function loadHistory(){
+  const box = document.getElementById('historyBody');
+  const items = [];
+  for (let i = 1; i <= 4; i++){
+    const d = new Date(SAT); d.setDate(d.getDate() - 7*i);
+    const key = `w_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    try{
+      const s = await kvGet(key);
+      if (Array.isArray(s) && s.length)
+        items.push(`<div class="history-item"><span class="d">${pad(d.getMonth()+1)}.${pad(d.getDate())}</span>
+          <span class="names">${s.length} 人：${s.map(p=>esc(p.n)).join('、')}</span></div>`);
+    }catch(e){}
+  }
+  box.innerHTML = items.length ? items.join('') : '<div class="hint">還沒有過往紀錄，本週打完就有了。</div>';
+}
+document.getElementById('historyFold').addEventListener('toggle', function(){ if (this.open) loadHistory(); }, {once:true});
+
+/* ================= 啟動 ================= */
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600);
+}
+loadCache(); render(); pull();
+setInterval(pull, POLL_MS);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
+setInterval(refreshStatus, 30000);
+</script>
+</body>
+</html>
