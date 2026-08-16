@@ -41,7 +41,7 @@ seed_signups = {
         }
     ]
 }
-seed_roster = ["Miller", "女神", "米革力", "木每女臣", "修銘", "阿源"]
+seed_roster = ["米革力", "木每女臣", "女神", "亻｜㣊金名", "阝可氵原"]
 
 worker = r'''// 淡水乳酸堆起 週六羽球報名 — Cloudflare Worker（UI + API + KV）
 // 由 build_worker.py 產生，勿直接編輯；改 index.html 後重跑 python3 build_worker.py
