@@ -92,15 +92,15 @@ h1 .accent{color:var(--lime)}
 .court-svg{display:block;width:100%;height:auto}
 .court-svg line,.court-svg rect{stroke:var(--line);stroke-width:4;fill:none;opacity:.9}
 .court-svg .net{stroke-dasharray:14 10;stroke-width:5;opacity:.55}
-/* 場線繪製動畫 */
-.court-svg .draw{stroke-dasharray:2200;stroke-dashoffset:2200;animation:draw 1.6s .3s ease forwards}
+/* 場線繪製動畫：pathLength 統一為 100，任何長度的線都能畫滿 */
+.court-svg .draw{stroke-dasharray:100.5;stroke-dashoffset:100.5;animation:draw 1.4s .3s ease forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
 .court-label{
-  position:absolute;top:10px;left:12px;font-family:var(--font-num);font-size:13px;
+  position:absolute;top:14px;left:16px;font-family:var(--font-num);font-size:13px;
   letter-spacing:.25em;color:var(--line);opacity:.8;
 }
 .court-count{
-  position:absolute;top:8px;right:12px;font-family:var(--font-num);font-size:22px;color:var(--lime);
+  position:absolute;top:9px;right:16px;font-family:var(--font-num);font-size:22px;color:var(--lime);
   white-space:nowrap;
 }
 .court-count small{font-size:12px;color:var(--line);opacity:.7}
@@ -108,7 +108,7 @@ h1 .accent{color:var(--lime)}
 .slots{
   position:absolute;inset:0;display:grid;
   grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,1fr);
-  padding:14% 12% 10%;gap:6px 14%;
+  padding:13% 12% 7%;gap:6px 14%;
   align-items:center;justify-items:center;
 }
 .slot{
@@ -248,17 +248,17 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
   <!-- 第一場：球場即名單 -->
   <section class="court-sec rise" style="animation-delay:.36s">
     <div class="court-card">
-      <svg class="court-svg" viewBox="0 0 610 900" aria-hidden="true">
-        <rect class="draw" x="30" y="30" width="550" height="840" rx="2"/>
-        <line class="draw" x1="76" y1="30" x2="76" y2="870"/>
-        <line class="draw" x1="534" y1="30" x2="534" y2="870"/>
-        <line class="draw" x1="30" y1="118" x2="580" y2="118"/>
-        <line class="draw" x1="30" y1="782" x2="580" y2="782"/>
-        <line class="draw" x1="30" y1="330" x2="580" y2="330"/>
-        <line class="draw" x1="30" y1="570" x2="580" y2="570"/>
-        <line class="draw" x1="305" y1="30" x2="305" y2="330"/>
-        <line class="draw" x1="305" y1="570" x2="305" y2="870"/>
-        <line class="net" x1="18" y1="450" x2="592" y2="450"/>
+      <svg class="court-svg" viewBox="0 0 610 960" aria-hidden="true">
+        <rect class="draw" pathLength="100" x="30" y="90" width="550" height="840" rx="2"/>
+        <line class="draw" pathLength="100" x1="76" y1="90" x2="76" y2="930"/>
+        <line class="draw" pathLength="100" x1="534" y1="90" x2="534" y2="930"/>
+        <line class="draw" pathLength="100" x1="30" y1="178" x2="580" y2="178"/>
+        <line class="draw" pathLength="100" x1="30" y1="842" x2="580" y2="842"/>
+        <line class="draw" pathLength="100" x1="30" y1="390" x2="580" y2="390"/>
+        <line class="draw" pathLength="100" x1="30" y1="630" x2="580" y2="630"/>
+        <line class="draw" pathLength="100" x1="305" y1="90" x2="305" y2="390"/>
+        <line class="draw" pathLength="100" x1="305" y1="630" x2="305" y2="930"/>
+        <line class="net" x1="18" y1="510" x2="592" y2="510"/>
       </svg>
       <div class="court-label">COURT 1</div>
       <div class="court-count" id="count1">0<small> / 8</small></div>
