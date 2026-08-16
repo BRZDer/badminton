@@ -2,8 +2,8 @@ var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
 // worker.js
-var SEED_SIGNUPS = { "2026-08-22": [{ "id": "b170e7bc-47bf-4fa3-9035-455ca389084a", "name": "\u7C73\u9769\u529B", "at": 1786865205920, "pos": 1 }, { "id": "51297712-d326-4484-9451-ba35fde053c1", "name": "\u6728\u6BCF\u5973\u81E3", "at": 1786865212036, "pos": 2 }, { "id": "f3e2f04e-d39c-46a5-8070-c32c99e7a5a2", "name": "\u5973\u795E", "at": 1786865218495, "pos": 3 }] };
-var SEED_ROSTER = ["Miller", "\u5973\u795E", "\u7C73\u9769\u529B", "\u6728\u6BCF\u5973\u81E3"];
+var SEED_SIGNUPS = { "2026-08-22": [{ "id": "b170e7bc-47bf-4fa3-9035-455ca389084a", "name": "\u7C73\u9769\u529B", "at": 1786865205920, "pos": 1 }, { "id": "51297712-d326-4484-9451-ba35fde053c1", "name": "\u6728\u6BCF\u5973\u81E3", "at": 1786865212036, "pos": 2 }, { "id": "f3e2f04e-d39c-46a5-8070-c32c99e7a5a2", "name": "\u5973\u795E", "at": 1786865218495, "pos": 3 }, { "id": "459633b1-9d92-48cd-a4d7-8e661ff81d9b", "name": "\u4FEE\u9298", "at": 1786897823875, "pos": 4 }, { "id": "9dde4718-d5fe-4618-9b90-94ddb721ce4c", "name": "\u963F\u6E90", "at": 1786897824782, "pos": 5 }] };
+var SEED_ROSTER = ["Miller", "\u5973\u795E", "\u7C73\u9769\u529B", "\u6728\u6BCF\u5973\u81E3", "\u4FEE\u9298", "\u963F\u6E90"];
 var HTML = `<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -489,6 +489,7 @@ function absorb(s){
   if (Array.isArray(s.history)) history = s.history;
   if (s.court >= 1) courtNo = s.court;
   if (s.counts) weekCounts = s.counts;
+  else if (Array.isArray(s.signups)) weekCounts[DKEY] = s.signups.length;
   if (DEMO) return;
   try{ localStorage.setItem('bd_cache', JSON.stringify({roster, signups, week: DKEY})); }catch(e){}
 }

@@ -9,12 +9,39 @@ html = (ROOT / 'index.html').read_text()
 # 只在 KV 對應 key 不存在時寫入，永不覆蓋既有資料
 seed_signups = {
     "2026-08-22": [
-        {"id": "b170e7bc-47bf-4fa3-9035-455ca389084a", "name": "米革力", "at": 1786865205920, "pos": 1},
-        {"id": "51297712-d326-4484-9451-ba35fde053c1", "name": "木每女臣", "at": 1786865212036, "pos": 2},
-        {"id": "f3e2f04e-d39c-46a5-8070-c32c99e7a5a2", "name": "女神", "at": 1786865218495, "pos": 3},
+        {
+            "id": "b170e7bc-47bf-4fa3-9035-455ca389084a",
+            "name": "米革力",
+            "at": 1786865205920,
+            "pos": 1
+        },
+        {
+            "id": "51297712-d326-4484-9451-ba35fde053c1",
+            "name": "木每女臣",
+            "at": 1786865212036,
+            "pos": 2
+        },
+        {
+            "id": "f3e2f04e-d39c-46a5-8070-c32c99e7a5a2",
+            "name": "女神",
+            "at": 1786865218495,
+            "pos": 3
+        },
+        {
+            "id": "459633b1-9d92-48cd-a4d7-8e661ff81d9b",
+            "name": "修銘",
+            "at": 1786897823875,
+            "pos": 4
+        },
+        {
+            "id": "9dde4718-d5fe-4618-9b90-94ddb721ce4c",
+            "name": "阿源",
+            "at": 1786897824782,
+            "pos": 5
+        }
     ]
 }
-seed_roster = ["Miller", "女神", "米革力", "木每女臣"]
+seed_roster = ["Miller", "女神", "米革力", "木每女臣", "修銘", "阿源"]
 
 worker = r'''// 淡水乳酸堆起 週六羽球報名 — Cloudflare Worker（UI + API + KV）
 // 由 build_worker.py 產生，勿直接編輯；改 index.html 後重跑 python3 build_worker.py
