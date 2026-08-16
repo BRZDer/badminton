@@ -2,7 +2,7 @@ var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
 // worker.js
-var SEED_SIGNUPS = { "2026-08-22": [{ "id": "b170e7bc-47bf-4fa3-9035-455ca389084a", "name": "\u7C73\u9769\u529B", "at": 1786865205920 }, { "id": "51297712-d326-4484-9451-ba35fde053c1", "name": "\u6728\u6BCF\u5973\u81E3", "at": 1786865212036 }, { "id": "f3e2f04e-d39c-46a5-8070-c32c99e7a5a2", "name": "\u5973\u795E", "at": 1786865218495 }] };
+var SEED_SIGNUPS = { "2026-08-22": [{ "id": "b170e7bc-47bf-4fa3-9035-455ca389084a", "name": "\u7C73\u9769\u529B", "at": 1786865205920, "pos": 1 }, { "id": "51297712-d326-4484-9451-ba35fde053c1", "name": "\u6728\u6BCF\u5973\u81E3", "at": 1786865212036, "pos": 2 }, { "id": "f3e2f04e-d39c-46a5-8070-c32c99e7a5a2", "name": "\u5973\u795E", "at": 1786865218495, "pos": 3 }] };
 var SEED_ROSTER = ["Miller", "\u5973\u795E", "\u7C73\u9769\u529B", "\u6728\u6BCF\u5973\u81E3"];
 var HTML = `<!DOCTYPE html>
 <html lang="zh-Hant">
@@ -102,31 +102,45 @@ h1 .accent{color:var(--lime)}
 .court-svg .draw{stroke-dasharray:100.5;stroke-dashoffset:100.5;animation:draw 1.4s .3s ease forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
 .court-label{
-  position:absolute;top:14px;left:16px;font-family:var(--font-num);font-size:13px;
-  letter-spacing:.25em;color:var(--line);opacity:.8;
+  position:absolute;top:10px;left:16px;font-family:var(--font-num);font-size:19px;
+  letter-spacing:.2em;color:var(--line);opacity:.95;display:flex;align-items:center;gap:6px;
+}
+.court-label select{
+  appearance:none;-webkit-appearance:none;border:1.5px solid var(--lime);border-radius:7px;
+  background:rgba(0,0,0,.25);color:var(--lime);font-family:var(--font-num);font-size:19px;
+  padding:1px 20px 1px 9px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23d9ff3e' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 6px center;
 }
 .court-count{
-  position:absolute;top:9px;right:16px;font-family:var(--font-num);font-size:22px;color:var(--lime);
+  position:absolute;top:8px;right:16px;font-family:var(--font-num);font-size:32px;color:var(--lime);
   white-space:nowrap;
 }
-.court-count small{font-size:12px;color:var(--line);opacity:.7}
-/* 8 \u500B\u7AD9\u4F4D\uFF1A\u758A\u5728\u7403\u5834\u4E0A */
+.court-count small{font-size:16px;color:var(--line);opacity:.75}
+/* 8 \u500B\u7AD9\u4F4D\uFF1A\u758A\u5728\u7403\u5834\u4E0A\uFF0C\u7E31\u5411\u8207\u56DB\u7B49\u4EFD\u5340\u57DF\u5C0D\u9F4A
+   \uFF08padding % \u4EE5\u5BEC\u5EA6\u70BA\u57FA\u6E96\uFF1A90/610\u300176/610\u300130/610\uFF09*/
 .slots{
   position:absolute;inset:0;display:grid;
   grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,1fr);
-  padding:13% 12% 7%;gap:6px 14%;
+  padding:14.75% 12.46% 4.92%;gap:0 14%;
   align-items:center;justify-items:center;
 }
 .slot{
   width:100%;max-width:150px;min-height:44px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;gap:5px;
+  display:flex;align-items:center;justify-content:center;
   font-size:15px;font-weight:700;letter-spacing:.05em;text-align:center;
-  transition:transform .15s;position:relative;padding:4px 6px;
+  transition:transform .15s;position:relative;padding:4px 8px;
 }
 .slot.empty{
   border:2px dashed rgba(239,233,216,.4);color:rgba(239,233,216,.5);
   font-family:var(--font-num);font-size:14px;font-weight:400;
 }
+/* \u9078\u597D\u540D\u5B57\u5F8C\uFF1A\u7A7A\u4F4D\u9032\u5165\u53EF\u9EDE\u72C0\u614B */
+.slot.empty.pick{
+  border-color:var(--lime);color:var(--lime);cursor:pointer;
+  animation:pulsePick 1.1s ease-in-out infinite;
+}
+@keyframes pulsePick{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .slot.filled{
   background:var(--chip);color:var(--chip-ink);cursor:pointer;
   box-shadow:0 4px 0 rgba(0,0,0,.3);
@@ -231,10 +245,10 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
 
   <header>
     <div class="team-row rise" style="animation-delay:.05s">
-      <span class="team-badge">\u6DE1\u6C34\u4E73\u9178\u5806\u8D77</span>
+      <span class="team-badge">\u6DE1\u6C34\u4E73\u9178\u5806\u8D77\u7FBD\u7403\u968A</span>
       <button class="btn-ghost" id="shareBtn">\u{1F517} \u8907\u88FD\u9023\u7D50</button>
     </div>
-    <h1 class="rise" style="animation-delay:.12s">\u9031\u516D<span class="accent">\u958B\u6253</span><br>\u540D\u5B57\u4E0A\u5834</h1>
+    <h1 class="rise" style="animation-delay:.12s">\u9031\u516D\u958B\u6253<br><span class="accent">\u624B\u5200\u5831\u540D</span></h1>
     <div class="date-block rise" style="animation-delay:.2s">
       <div class="date-num" id="dateNum">--.--</div>
       <div class="date-meta">
@@ -242,7 +256,7 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
         <div class="time">16:00\u201318:00</div>
       </div>
     </div>
-    <div class="venue rise" style="animation-delay:.26s">\u{1F4CD} <b>\u6DE1\u6C34\u570B\u6C11\u904B\u52D5\u4E2D\u5FC3</b>\u3000\u7FBD\u7403\u5834</div>
+    <div class="venue rise" style="animation-delay:.26s">\u{1F4CD} <b>\u6DE1\u6C34\u570B\u6C11\u904B\u52D5\u4E2D\u5FC34F</b>\u3000<span id="courtName">\u58F9</span>\u53F7\u7FBD\u7403\u5834</div>
     <div class="status-row rise" style="animation-delay:.3s">
       <span class="pill open" id="statusPill">\u5831\u540D\u4E2D</span>
       <span class="countdown" id="countdown"></span>
@@ -258,15 +272,20 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
         <rect class="draw" pathLength="100" x="30" y="90" width="550" height="840" rx="2"/>
         <line class="draw" pathLength="100" x1="76" y1="90" x2="76" y2="930"/>
         <line class="draw" pathLength="100" x1="534" y1="90" x2="534" y2="930"/>
-        <line class="draw" pathLength="100" x1="30" y1="178" x2="580" y2="178"/>
-        <line class="draw" pathLength="100" x1="30" y1="842" x2="580" y2="842"/>
-        <line class="draw" pathLength="100" x1="30" y1="390" x2="580" y2="390"/>
-        <line class="draw" pathLength="100" x1="30" y1="630" x2="580" y2="630"/>
-        <line class="draw" pathLength="100" x1="305" y1="90" x2="305" y2="390"/>
-        <line class="draw" pathLength="100" x1="305" y1="630" x2="305" y2="930"/>
+        <line class="draw" pathLength="100" x1="30" y1="138" x2="580" y2="138"/>
+        <line class="draw" pathLength="100" x1="30" y1="882" x2="580" y2="882"/>
+        <line class="draw" pathLength="100" x1="30" y1="300" x2="580" y2="300"/>
+        <line class="draw" pathLength="100" x1="30" y1="720" x2="580" y2="720"/>
+        <line class="draw" pathLength="100" x1="305" y1="90" x2="305" y2="300"/>
+        <line class="draw" pathLength="100" x1="305" y1="720" x2="305" y2="930"/>
         <line class="net" x1="18" y1="510" x2="592" y2="510"/>
       </svg>
-      <div class="court-label">COURT 1</div>
+      <div class="court-label">COURT
+        <select id="courtSel" title="\u5718\u9577\u8A02\u5230\u7B2C\u5E7E\u9762\u5834\u5730\u5C31\u6539\u9019\u88E1">
+          <option>1</option><option>2</option><option>3</option>
+          <option>4</option><option>5</option><option>6</option>
+        </select>
+      </div>
       <div class="court-count" id="count1">0<small> / 8</small></div>
       <div class="slots" id="slots1"></div>
     </div>
@@ -350,22 +369,30 @@ function refreshStatus(){
 
 /* ================= \u8CC7\u6599\u5C64 ================= */
 let roster = ['Miller'];
-let signups = [];   // [{id,name,at}] id \u7531\u4F3A\u670D\u5668\u767C
+let signups = [];   // [{id,name,at,pos}] id \u7531\u4F3A\u670D\u5668\u767C\uFF0Cpos=\u5834\u4E0A\u4F4D\u7F6E(1-8 \u7B2C\u4E00\u5834)
 let history = [];   // [{date,names:[]}]
+let courtNo = 1;    // \u5718\u9577\u8A02\u5230\u7684\u5834\u5730\u865F\uFF081-6\uFF0C\u5168\u968A\u5171\u4EAB\uFF09
+let pendingName = null;  // \u5DF2\u9078\u597D\u3001\u5F85\u9EDE\u4F4D\u7F6E\u7684\u540D\u5B57
 let online = true;
 
 /* DEMO \u6C99\u76D2\u6A21\u5F0F\uFF08?demo=1\uFF09\uFF1A\u5168\u90E8\u5728\u672C\u9801\u8A18\u61B6\u9AD4\u6A21\u64EC\uFF0C\u4E0D\u78B0\u6B63\u5F0F\u8CC7\u6599\u5EAB */
 const DEMO = new URLSearchParams(location.search).has('demo');
 const demoStore = {
-  signups:[{id:'d1',name:'\u7C73\u9769\u529B',at:1},{id:'d2',name:'\u6728\u6BCF\u5973\u81E3',at:2},{id:'d3',name:'\u5973\u795E',at:3}],
+  signups:[{id:'d1',name:'\u7C73\u9769\u529B',at:1,pos:1},{id:'d2',name:'\u6728\u6BCF\u5973\u81E3',at:2,pos:2},{id:'d3',name:'\u5973\u795E',at:3,pos:5}],
   roster:['Miller','\u5973\u795E','\u7C73\u9769\u529B','\u6728\u6BCF\u5973\u81E3'],
-  history:[{date:'2026-08-09',names:['\u7C73\u9769\u529B','\u5973\u795E','Miller']}]
+  history:[{date:'2026-08-09',names:['\u7C73\u9769\u529B','\u5973\u795E','Miller']}],
+  court:1
 };
 function demoApi(path, body){
-  if (path === 'signup' && !demoStore.signups.some(x=>x.name===body.name))
-    demoStore.signups.push({id:'d'+Date.now(), name:body.name, at:Date.now()});
+  if (path === 'signup' && !demoStore.signups.some(x=>x.name===body.name)){
+    const taken = new Set(demoStore.signups.map(x=>x.pos));
+    let pos = body.pos && !taken.has(body.pos) ? body.pos : null;
+    if (!pos){ pos = 1; while (taken.has(pos)) pos++; }
+    demoStore.signups.push({id:'d'+Date.now(), name:body.name, at:Date.now(), pos});
+  }
   if (path === 'cancel') demoStore.signups = demoStore.signups.filter(x=>x.id!==body.id);
   if (path === 'addname' && !demoStore.roster.includes(body.name)) demoStore.roster.push(body.name);
+  if (path === 'setcourt') demoStore.court = body.court;
   return Promise.resolve(JSON.parse(JSON.stringify(demoStore)));
 }
 async function api(path, body){
@@ -381,6 +408,7 @@ function absorb(s){
   if (Array.isArray(s.signups)) signups = s.signups;
   if (Array.isArray(s.roster) && s.roster.length) roster = s.roster;
   if (Array.isArray(s.history)) history = s.history;
+  if (s.court >= 1) courtNo = s.court;
   if (DEMO) return;
   try{ localStorage.setItem('bd_cache', JSON.stringify({roster, signups, week: DKEY})); }catch(e){}
 }
@@ -399,20 +427,28 @@ async function pull(){
 /* ================= \u756B\u9762 ================= */
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-function chipHTML(i, p){
+function chipHTML(p){
   return \`<div class="slot filled" data-id="\${esc(p.id)}" data-name="\${esc(p.name)}" title="\u9EDE\u4E00\u4E0B\u53D6\u6D88\u5831\u540D">
-    <span class="num">\${i+1}</span>\${esc(p.name)}</div>\`;
+    <span class="num">\${p.pos}</span>\${esc(p.name)}</div>\`;
 }
 function render(){
   const st = refreshStatus();
   document.getElementById('offlineBox').style.display = online ? 'none' : 'block';
 
-  /* \u7B2C\u4E00\u5834 8 \u683C */
+  /* \u5834\u5730\u865F\u540C\u6B65\uFF08\u5718\u9577\u8A2D\u5B9A\uFF09 */
+  document.getElementById('courtSel').value = String(courtNo);
+  document.getElementById('courtName').textContent = '\u58F9\u8CB3\u53C3\u8086\u4F0D\u9678'[courtNo-1] || courtNo;
+
+  /* \u7B2C\u4E00\u5834 8 \u683C\uFF1A\u4F9D pos \u653E\u7F6E\uFF1B\u9078\u597D\u540D\u5B57\u6642\u7A7A\u4F4D\u9032\u5165\u53EF\u9EDE\u72C0\u614B */
+  const byPos = {};
+  signups.forEach(p => { byPos[p.pos] = p; });
   const s1 = document.getElementById('slots1');
+  const picking = pendingName && st === 'open';
   s1.innerHTML = Array.from({length: CAP1}, (_, i) =>
-    signups[i] ? chipHTML(i, signups[i])
-               : \`<div class="slot empty">NO.\${i+1}</div>\`).join('');
-  document.getElementById('count1').innerHTML = \`\${Math.min(signups.length, CAP1)}<small> / 8</small>\`;
+    byPos[i+1] ? chipHTML(byPos[i+1])
+               : \`<div class="slot empty\${picking ? ' pick' : ''}" data-pos="\${i+1}">NO.\${i+1}</div>\`).join('');
+  const n1 = signups.filter(p => p.pos <= CAP1).length;
+  document.getElementById('count1').innerHTML = \`\${n1}<small> / 8</small>\`;
 
   /* \u7B2C\u4E8C\u5834 */
   const c2 = document.getElementById('court2Sec');
@@ -422,8 +458,8 @@ function render(){
       <b>\u7B2C\u4E8C\u5834\u672A\u958B\u653E</b>\u3000\u5831\u540D\u6EFF \${UNLOCK2} \u4EBA\u81EA\u52D5\u6210\u7ACB\u7B2C\u4E8C\u5834
       <div class="bar"><i style="width:\${Math.min(n/UNLOCK2*100,100)}%"></i></div></div></div>\`;
   } else {
-    const second = signups.slice(CAP1, CAP_TOTAL);
-    const chips = second.map((p,i)=>chipHTML(CAP1+i, p)).join('');
+    const second = signups.filter(p => p.pos > CAP1 && p.pos <= CAP_TOTAL).sort((a,b)=>a.pos-b.pos);
+    const chips = second.map(p=>chipHTML(p)).join('');
     if (n < UNLOCK2){
       c2.innerHTML = \`<div class="court2-status"><span class="lock">\u23F3</span><div class="txt">
         <b>\u7B2C\u4E8C\u5834\u5019\u88DC\u4E2D\uFF08\${n}/\${UNLOCK2}\uFF09</b>\u3000\u518D \${UNLOCK2-n} \u4EBA\u5C31\u6210\u7ACB\uFF0C\u5148\u6392\u968A\uFF1A
@@ -439,9 +475,10 @@ function render(){
 
   /* \u5019\u88DC\uFF08>16\uFF09 */
   const bench = document.getElementById('benchSec');
-  bench.innerHTML = n > CAP_TOTAL
+  const waiters = signups.filter(p => p.pos > CAP_TOTAL).sort((a,b)=>a.pos-b.pos);
+  bench.innerHTML = waiters.length
     ? \`<div class="bench"><h3>WAITLIST\uFF0F\u5019\u88DC\u5E2D</h3><div class="bench-chips">
-        \${signups.slice(CAP_TOTAL).map((p,i)=>chipHTML(CAP_TOTAL+i,p)).join('')}</div></div>\`
+        \${waiters.map(p=>chipHTML(p)).join('')}</div></div>\`
     : '';
 
   /* \u4E0B\u62C9\u9078\u55AE\uFF1A\u540D\u55AE\uFF0D\u5DF2\u5831\u540D */
@@ -454,10 +491,10 @@ function render(){
   } else if (!avail.length){
     sel.innerHTML = \`<option>\u5168\u54E1\u90FD\u5831\u540D\u4E86 \u{1F4AA}</option>\`; go.disabled = true;
   } else {
-    const cur = sel.value;
+    if (pendingName && !avail.includes(pendingName)) pendingName = null;
     sel.innerHTML = \`<option value="" disabled selected>\u9078\u4F60\u7684\u540D\u5B57</option>\` +
       avail.map(x => \`<option value="\${esc(x)}">\${esc(x)}</option>\`).join('');
-    if (avail.includes(cur)) sel.value = cur;
+    if (pendingName) sel.value = pendingName;
     go.disabled = false;
   }
 
@@ -472,19 +509,46 @@ function renderHistory(){
 }
 
 /* ================= \u4E92\u52D5 ================= */
+/* \u6D41\u7A0B\uFF1A\u4E0B\u62C9\u9078\u540D\u5B57 \u2192 \u5834\u4E0A\u7A7A\u4F4D\u958B\u59CB\u9583 \u2192 \u9EDE\u4F4D\u7F6E\u5B8C\u6210\u5831\u540D\uFF1B\u6309\u300C\u5831\u540D\u300D\u5247\u81EA\u52D5\u6392\u6700\u524D\u7A7A\u4F4D */
+async function doSignup(name, pos){
+  try{
+    absorb(await api('signup', {date: DKEY, name, pos}));
+    online = true; pendingName = null;
+    const me = signups.find(p => p.name === name);
+    toast(me && me.pos <= CAP1 ? \`\u2705 \${name} \u7AD9\u4E0A NO.\${me.pos}\uFF01\` : \`\u2705 \${name} \u5DF2\u6392\u5165\uFF0C\u76EE\u524D\u5171 \${signups.length} \u4EBA\`);
+  }catch(e){
+    online = navigator.onLine !== false;
+    toast(String(e).includes('taken') ? '\u9019\u500B\u4F4D\u7F6E\u525B\u88AB\u6436\u8D70\uFF0C\u63DB\u4E00\u683C\u5427' : '\u9023\u7DDA\u5931\u6557\uFF0C\u8ACB\u518D\u8A66\u4E00\u6B21');
+  }
+  render();
+}
+
+document.getElementById('nameSel').addEventListener('change', e => {
+  if (refreshStatus() !== 'open') return;
+  pendingName = e.target.value || null;
+  render();
+  if (pendingName){
+    const hasEmpty = signups.filter(p => p.pos <= CAP1).length < CAP1;
+    toast(hasEmpty ? \`\${pendingName}\uFF0C\u9EDE\u5834\u4E0A\u7684\u7A7A\u4F4D\u5B8C\u6210\u5831\u540D\` : '\u7B2C\u4E00\u5834\u5DF2\u6EFF\uFF0C\u6309\u300C\u5831\u540D\u300D\u6392\u5165\u7B2C\u4E8C\u5834');
+  }
+});
+
 document.getElementById('goBtn').addEventListener('click', async () => {
   const name = document.getElementById('nameSel').value;
   if (!name) { toast('\u5148\u9078\u540D\u5B57\u518D\u5831\u540D'); return; }
-  try{
-    absorb(await api('signup', {date: DKEY, name}));
-    online = true;
-    toast(\`\u2705 \${name} \u4E0A\u5834\uFF01\u76EE\u524D \${signups.length} \u4EBA\`);
-  }catch(e){ online = false; toast('\u9023\u7DDA\u5931\u6557\uFF0C\u8ACB\u518D\u8A66\u4E00\u6B21'); }
-  render();
+  await doSignup(name, null);   // \u4E0D\u6307\u5B9A\u4F4D\u7F6E \u2192 \u4F3A\u670D\u5668\u6392\u6700\u524D\u7A7A\u4F4D
 });
 
-/* \u9EDE\u540D\u5B57\u6676\u7247 \u2192 \u53D6\u6D88\u5831\u540D */
 document.body.addEventListener('click', async e => {
+  /* \u9EDE\u7A7A\u4F4D \u2192 \u7528\u5DF2\u9078\u7684\u540D\u5B57\u5831\u540D\u5230\u8A72\u4F4D\u7F6E */
+  const empty = e.target.closest('.slot.empty');
+  if (empty && empty.dataset.pos){
+    if (refreshStatus() !== 'open') return;
+    if (!pendingName){ toast('\u5148\u5728\u4E0B\u9762\u9078\u4F60\u7684\u540D\u5B57'); return; }
+    await doSignup(pendingName, Number(empty.dataset.pos));
+    return;
+  }
+  /* \u9EDE\u540D\u5B57\u6676\u7247 \u2192 \u53D6\u6D88\u5831\u540D */
   const chip = e.target.closest('.slot.filled');
   if (!chip) return;
   if (refreshStatus() !== 'open'){ toast('\u5DF2\u622A\u6B62\uFF0C\u540D\u55AE\u9396\u5B9A'); return; }
@@ -495,6 +559,17 @@ document.body.addEventListener('click', async e => {
     online = true;
     toast(\`\u5DF2\u53D6\u6D88 \${name} \u7684\u5831\u540D\`);
   }catch(e){ online = false; toast('\u9023\u7DDA\u5931\u6557\uFF0C\u8ACB\u518D\u8A66\u4E00\u6B21'); }
+  render();
+});
+
+/* \u5718\u9577\u6539\u5834\u5730\u865F\uFF081-6\uFF0C\u5168\u968A\u540C\u6B65\uFF09 */
+document.getElementById('courtSel').addEventListener('change', async e => {
+  const court = Number(e.target.value);
+  try{
+    absorb(await api('setcourt', {date: DKEY, court}));
+    online = true;
+    toast(\`\u5834\u5730\u6539\u70BA \${court} \u865F\u5834\`);
+  }catch(err){ online = false; toast('\u9023\u7DDA\u5931\u6557\uFF0C\u8ACB\u518D\u8A66\u4E00\u6B21'); }
   render();
 });
 
@@ -558,14 +633,33 @@ function kvOf(env) {
 }
 __name(kvOf, "kvOf");
 var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-var norm = /* @__PURE__ */ __name((x) => ({ id: x.id || crypto.randomUUID(), name: x.name || x.n || "", at: x.at || 0 }), "norm");
+var norm = /* @__PURE__ */ __name((x) => ({ id: x.id || crypto.randomUUID(), name: x.name || x.n || "", at: x.at || 0, pos: x.pos | 0 }), "norm");
+function backfillPos(list) {
+  const taken = new Set(list.filter((x) => x.pos >= 1).map((x) => x.pos));
+  for (const x of list) {
+    if (x.pos >= 1) continue;
+    let p = 1;
+    while (taken.has(p)) p++;
+    x.pos = p;
+    taken.add(p);
+  }
+  return list;
+}
+__name(backfillPos, "backfillPos");
+function lowestFree(list) {
+  const taken = new Set(list.map((x) => x.pos));
+  let p = 1;
+  while (taken.has(p)) p++;
+  return p;
+}
+__name(lowestFree, "lowestFree");
 async function readSignups(kv, date) {
   let v = await kv.get("s:" + date, "json");
   if (v === null && SEED_SIGNUPS[date]) {
     v = SEED_SIGNUPS[date];
     await kv.put("s:" + date, JSON.stringify(v));
   }
-  return Array.isArray(v) ? v.map(norm) : [];
+  return Array.isArray(v) ? backfillPos(v.map(norm)) : [];
 }
 __name(readSignups, "readSignups");
 async function readRoster(kv) {
@@ -578,8 +672,12 @@ async function readRoster(kv) {
 }
 __name(readRoster, "readRoster");
 async function buildState(kv, date, withHist) {
-  const [signups, roster] = await Promise.all([readSignups(kv, date), readRoster(kv)]);
-  const out = { signups, roster };
+  const [signups, roster, court] = await Promise.all([
+    readSignups(kv, date),
+    readRoster(kv),
+    kv.get("c:" + date)
+  ]);
+  const out = { signups, roster, court: Math.min(Math.max(parseInt(court) || 1, 1), 6) };
   if (withHist) {
     out.history = [];
     const base = /* @__PURE__ */ new Date(date + "T00:00:00Z");
@@ -615,12 +713,20 @@ var worker_default = {
       if (p === "signup") {
         const date = String(b.date || ""), name = String(b.name || "").trim().slice(0, 20);
         if (!DATE_RE.test(date) || !name) return J({ error: "bad request" }, 400);
+        const wantPos = Number.isInteger(b.pos) && b.pos >= 1 && b.pos <= 48 ? b.pos : null;
         const s = await readSignups(kv, date);
         if (!s.some((x) => x.name === name)) {
-          s.push({ id: crypto.randomUUID(), name, at: Date.now() });
+          if (wantPos && s.some((x) => x.pos === wantPos)) return J({ error: "position taken" }, 409);
+          s.push({ id: crypto.randomUUID(), name, at: Date.now(), pos: wantPos || lowestFree(s) });
           await kv.put("s:" + date, JSON.stringify(s));
         }
         return J(await buildState(kv, date, true));
+      }
+      if (p === "setcourt") {
+        const date = String(b.date || ""), court = parseInt(b.court);
+        if (!DATE_RE.test(date) || !(court >= 1 && court <= 6)) return J({ error: "bad request" }, 400);
+        await kv.put("c:" + date, String(court));
+        return J(await buildState(kv, date, false));
       }
       if (p === "cancel") {
         const date = String(b.date || "");
@@ -695,7 +801,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-Kwclp3/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-mVQwLz/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -727,7 +833,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-Kwclp3/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-mVQwLz/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

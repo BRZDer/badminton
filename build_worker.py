@@ -9,9 +9,9 @@ html = (ROOT / 'index.html').read_text()
 # 只在 KV 對應 key 不存在時寫入，永不覆蓋既有資料
 seed_signups = {
     "2026-08-22": [
-        {"id": "b170e7bc-47bf-4fa3-9035-455ca389084a", "name": "米革力", "at": 1786865205920},
-        {"id": "51297712-d326-4484-9451-ba35fde053c1", "name": "木每女臣", "at": 1786865212036},
-        {"id": "f3e2f04e-d39c-46a5-8070-c32c99e7a5a2", "name": "女神", "at": 1786865218495},
+        {"id": "b170e7bc-47bf-4fa3-9035-455ca389084a", "name": "米革力", "at": 1786865205920, "pos": 1},
+        {"id": "51297712-d326-4484-9451-ba35fde053c1", "name": "木每女臣", "at": 1786865212036, "pos": 2},
+        {"id": "f3e2f04e-d39c-46a5-8070-c32c99e7a5a2", "name": "女神", "at": 1786865218495, "pos": 3},
     ]
 }
 seed_roster = ["Miller", "女神", "米革力", "木每女臣"]
@@ -43,7 +43,22 @@ function kvOf(env) {
 }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const norm = x => ({ id: x.id || crypto.randomUUID(), name: x.name || x.n || '', at: x.at || 0 });
+const norm = x => ({ id: x.id || crypto.randomUUID(), name: x.name || x.n || '', at: x.at || 0, pos: x.pos | 0 });
+// 舊資料沒有 pos → 依序補上最前面的空位
+function backfillPos(list) {
+  const taken = new Set(list.filter(x => x.pos >= 1).map(x => x.pos));
+  for (const x of list) {
+    if (x.pos >= 1) continue;
+    let p = 1; while (taken.has(p)) p++;
+    x.pos = p; taken.add(p);
+  }
+  return list;
+}
+function lowestFree(list) {
+  const taken = new Set(list.map(x => x.pos));
+  let p = 1; while (taken.has(p)) p++;
+  return p;
+}
 
 async function readSignups(kv, date) {
   let v = await kv.get('s:' + date, 'json');
@@ -51,7 +66,7 @@ async function readSignups(kv, date) {
     v = SEED_SIGNUPS[date];
     await kv.put('s:' + date, JSON.stringify(v));
   }
-  return Array.isArray(v) ? v.map(norm) : [];
+  return Array.isArray(v) ? backfillPos(v.map(norm)) : [];
 }
 async function readRoster(kv) {
   let v = await kv.get('roster', 'json');
@@ -62,8 +77,10 @@ async function readRoster(kv) {
   return v;
 }
 async function buildState(kv, date, withHist) {
-  const [signups, roster] = await Promise.all([readSignups(kv, date), readRoster(kv)]);
-  const out = { signups, roster };
+  const [signups, roster, court] = await Promise.all([
+    readSignups(kv, date), readRoster(kv), kv.get('c:' + date),
+  ]);
+  const out = { signups, roster, court: Math.min(Math.max(parseInt(court) || 1, 1), 6) };
   if (withHist) {
     out.history = [];
     const base = new Date(date + 'T00:00:00Z');
@@ -98,12 +115,20 @@ export default {
       if (p === 'signup') {
         const date = String(b.date || ''), name = String(b.name || '').trim().slice(0, 20);
         if (!DATE_RE.test(date) || !name) return J({ error: 'bad request' }, 400);
+        const wantPos = Number.isInteger(b.pos) && b.pos >= 1 && b.pos <= 48 ? b.pos : null;
         const s = await readSignups(kv, date);
         if (!s.some(x => x.name === name)) {
-          s.push({ id: crypto.randomUUID(), name, at: Date.now() });
+          if (wantPos && s.some(x => x.pos === wantPos)) return J({ error: 'position taken' }, 409);
+          s.push({ id: crypto.randomUUID(), name, at: Date.now(), pos: wantPos || lowestFree(s) });
           await kv.put('s:' + date, JSON.stringify(s));
         }
         return J(await buildState(kv, date, true));
+      }
+      if (p === 'setcourt') {
+        const date = String(b.date || ''), court = parseInt(b.court);
+        if (!DATE_RE.test(date) || !(court >= 1 && court <= 6)) return J({ error: 'bad request' }, 400);
+        await kv.put('c:' + date, String(court));
+        return J(await buildState(kv, date, false));
       }
       if (p === 'cancel') {
         const date = String(b.date || '');

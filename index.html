@@ -96,31 +96,45 @@ h1 .accent{color:var(--lime)}
 .court-svg .draw{stroke-dasharray:100.5;stroke-dashoffset:100.5;animation:draw 1.4s .3s ease forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
 .court-label{
-  position:absolute;top:14px;left:16px;font-family:var(--font-num);font-size:13px;
-  letter-spacing:.25em;color:var(--line);opacity:.8;
+  position:absolute;top:10px;left:16px;font-family:var(--font-num);font-size:19px;
+  letter-spacing:.2em;color:var(--line);opacity:.95;display:flex;align-items:center;gap:6px;
+}
+.court-label select{
+  appearance:none;-webkit-appearance:none;border:1.5px solid var(--lime);border-radius:7px;
+  background:rgba(0,0,0,.25);color:var(--lime);font-family:var(--font-num);font-size:19px;
+  padding:1px 20px 1px 9px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23d9ff3e' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 6px center;
 }
 .court-count{
-  position:absolute;top:9px;right:16px;font-family:var(--font-num);font-size:22px;color:var(--lime);
+  position:absolute;top:8px;right:16px;font-family:var(--font-num);font-size:32px;color:var(--lime);
   white-space:nowrap;
 }
-.court-count small{font-size:12px;color:var(--line);opacity:.7}
-/* 8 個站位：疊在球場上 */
+.court-count small{font-size:16px;color:var(--line);opacity:.75}
+/* 8 個站位：疊在球場上，縱向與四等份區域對齊
+   （padding % 以寬度為基準：90/610、76/610、30/610）*/
 .slots{
   position:absolute;inset:0;display:grid;
   grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,1fr);
-  padding:13% 12% 7%;gap:6px 14%;
+  padding:14.75% 12.46% 4.92%;gap:0 14%;
   align-items:center;justify-items:center;
 }
 .slot{
   width:100%;max-width:150px;min-height:44px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;gap:5px;
+  display:flex;align-items:center;justify-content:center;
   font-size:15px;font-weight:700;letter-spacing:.05em;text-align:center;
-  transition:transform .15s;position:relative;padding:4px 6px;
+  transition:transform .15s;position:relative;padding:4px 8px;
 }
 .slot.empty{
   border:2px dashed rgba(239,233,216,.4);color:rgba(239,233,216,.5);
   font-family:var(--font-num);font-size:14px;font-weight:400;
 }
+/* 選好名字後：空位進入可點狀態 */
+.slot.empty.pick{
+  border-color:var(--lime);color:var(--lime);cursor:pointer;
+  animation:pulsePick 1.1s ease-in-out infinite;
+}
+@keyframes pulsePick{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .slot.filled{
   background:var(--chip);color:var(--chip-ink);cursor:pointer;
   box-shadow:0 4px 0 rgba(0,0,0,.3);
@@ -225,10 +239,10 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
 
   <header>
     <div class="team-row rise" style="animation-delay:.05s">
-      <span class="team-badge">淡水乳酸堆起</span>
+      <span class="team-badge">淡水乳酸堆起羽球隊</span>
       <button class="btn-ghost" id="shareBtn">🔗 複製連結</button>
     </div>
-    <h1 class="rise" style="animation-delay:.12s">週六<span class="accent">開打</span><br>名字上場</h1>
+    <h1 class="rise" style="animation-delay:.12s">週六開打<br><span class="accent">手刀報名</span></h1>
     <div class="date-block rise" style="animation-delay:.2s">
       <div class="date-num" id="dateNum">--.--</div>
       <div class="date-meta">
@@ -236,7 +250,7 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
         <div class="time">16:00–18:00</div>
       </div>
     </div>
-    <div class="venue rise" style="animation-delay:.26s">📍 <b>淡水國民運動中心</b>　羽球場</div>
+    <div class="venue rise" style="animation-delay:.26s">📍 <b>淡水國民運動中心4F</b>　<span id="courtName">壹</span>号羽球場</div>
     <div class="status-row rise" style="animation-delay:.3s">
       <span class="pill open" id="statusPill">報名中</span>
       <span class="countdown" id="countdown"></span>
@@ -254,13 +268,18 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
         <line class="draw" pathLength="100" x1="534" y1="90" x2="534" y2="930"/>
         <line class="draw" pathLength="100" x1="30" y1="138" x2="580" y2="138"/>
         <line class="draw" pathLength="100" x1="30" y1="882" x2="580" y2="882"/>
-        <line class="draw" pathLength="100" x1="30" y1="390" x2="580" y2="390"/>
-        <line class="draw" pathLength="100" x1="30" y1="630" x2="580" y2="630"/>
-        <line class="draw" pathLength="100" x1="305" y1="90" x2="305" y2="390"/>
-        <line class="draw" pathLength="100" x1="305" y1="630" x2="305" y2="930"/>
+        <line class="draw" pathLength="100" x1="30" y1="300" x2="580" y2="300"/>
+        <line class="draw" pathLength="100" x1="30" y1="720" x2="580" y2="720"/>
+        <line class="draw" pathLength="100" x1="305" y1="90" x2="305" y2="300"/>
+        <line class="draw" pathLength="100" x1="305" y1="720" x2="305" y2="930"/>
         <line class="net" x1="18" y1="510" x2="592" y2="510"/>
       </svg>
-      <div class="court-label">COURT 1</div>
+      <div class="court-label">COURT
+        <select id="courtSel" title="團長訂到第幾面場地就改這裡">
+          <option>1</option><option>2</option><option>3</option>
+          <option>4</option><option>5</option><option>6</option>
+        </select>
+      </div>
       <div class="court-count" id="count1">0<small> / 8</small></div>
       <div class="slots" id="slots1"></div>
     </div>
@@ -344,22 +363,30 @@ function refreshStatus(){
 
 /* ================= 資料層 ================= */
 let roster = ['Miller'];
-let signups = [];   // [{id,name,at}] id 由伺服器發
+let signups = [];   // [{id,name,at,pos}] id 由伺服器發，pos=場上位置(1-8 第一場)
 let history = [];   // [{date,names:[]}]
+let courtNo = 1;    // 團長訂到的場地號（1-6，全隊共享）
+let pendingName = null;  // 已選好、待點位置的名字
 let online = true;
 
 /* DEMO 沙盒模式（?demo=1）：全部在本頁記憶體模擬，不碰正式資料庫 */
 const DEMO = new URLSearchParams(location.search).has('demo');
 const demoStore = {
-  signups:[{id:'d1',name:'米革力',at:1},{id:'d2',name:'木每女臣',at:2},{id:'d3',name:'女神',at:3}],
+  signups:[{id:'d1',name:'米革力',at:1,pos:1},{id:'d2',name:'木每女臣',at:2,pos:2},{id:'d3',name:'女神',at:3,pos:5}],
   roster:['Miller','女神','米革力','木每女臣'],
-  history:[{date:'2026-08-09',names:['米革力','女神','Miller']}]
+  history:[{date:'2026-08-09',names:['米革力','女神','Miller']}],
+  court:1
 };
 function demoApi(path, body){
-  if (path === 'signup' && !demoStore.signups.some(x=>x.name===body.name))
-    demoStore.signups.push({id:'d'+Date.now(), name:body.name, at:Date.now()});
+  if (path === 'signup' && !demoStore.signups.some(x=>x.name===body.name)){
+    const taken = new Set(demoStore.signups.map(x=>x.pos));
+    let pos = body.pos && !taken.has(body.pos) ? body.pos : null;
+    if (!pos){ pos = 1; while (taken.has(pos)) pos++; }
+    demoStore.signups.push({id:'d'+Date.now(), name:body.name, at:Date.now(), pos});
+  }
   if (path === 'cancel') demoStore.signups = demoStore.signups.filter(x=>x.id!==body.id);
   if (path === 'addname' && !demoStore.roster.includes(body.name)) demoStore.roster.push(body.name);
+  if (path === 'setcourt') demoStore.court = body.court;
   return Promise.resolve(JSON.parse(JSON.stringify(demoStore)));
 }
 async function api(path, body){
@@ -375,6 +402,7 @@ function absorb(s){
   if (Array.isArray(s.signups)) signups = s.signups;
   if (Array.isArray(s.roster) && s.roster.length) roster = s.roster;
   if (Array.isArray(s.history)) history = s.history;
+  if (s.court >= 1) courtNo = s.court;
   if (DEMO) return;
   try{ localStorage.setItem('bd_cache', JSON.stringify({roster, signups, week: DKEY})); }catch(e){}
 }
@@ -393,20 +421,28 @@ async function pull(){
 /* ================= 畫面 ================= */
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-function chipHTML(i, p){
+function chipHTML(p){
   return `<div class="slot filled" data-id="${esc(p.id)}" data-name="${esc(p.name)}" title="點一下取消報名">
-    <span class="num">${i+1}</span>${esc(p.name)}</div>`;
+    <span class="num">${p.pos}</span>${esc(p.name)}</div>`;
 }
 function render(){
   const st = refreshStatus();
   document.getElementById('offlineBox').style.display = online ? 'none' : 'block';
 
-  /* 第一場 8 格 */
+  /* 場地號同步（團長設定） */
+  document.getElementById('courtSel').value = String(courtNo);
+  document.getElementById('courtName').textContent = '壹貳參肆伍陸'[courtNo-1] || courtNo;
+
+  /* 第一場 8 格：依 pos 放置；選好名字時空位進入可點狀態 */
+  const byPos = {};
+  signups.forEach(p => { byPos[p.pos] = p; });
   const s1 = document.getElementById('slots1');
+  const picking = pendingName && st === 'open';
   s1.innerHTML = Array.from({length: CAP1}, (_, i) =>
-    signups[i] ? chipHTML(i, signups[i])
-               : `<div class="slot empty">NO.${i+1}</div>`).join('');
-  document.getElementById('count1').innerHTML = `${Math.min(signups.length, CAP1)}<small> / 8</small>`;
+    byPos[i+1] ? chipHTML(byPos[i+1])
+               : `<div class="slot empty${picking ? ' pick' : ''}" data-pos="${i+1}">NO.${i+1}</div>`).join('');
+  const n1 = signups.filter(p => p.pos <= CAP1).length;
+  document.getElementById('count1').innerHTML = `${n1}<small> / 8</small>`;
 
   /* 第二場 */
   const c2 = document.getElementById('court2Sec');
@@ -416,8 +452,8 @@ function render(){
       <b>第二場未開放</b>　報名滿 ${UNLOCK2} 人自動成立第二場
       <div class="bar"><i style="width:${Math.min(n/UNLOCK2*100,100)}%"></i></div></div></div>`;
   } else {
-    const second = signups.slice(CAP1, CAP_TOTAL);
-    const chips = second.map((p,i)=>chipHTML(CAP1+i, p)).join('');
+    const second = signups.filter(p => p.pos > CAP1 && p.pos <= CAP_TOTAL).sort((a,b)=>a.pos-b.pos);
+    const chips = second.map(p=>chipHTML(p)).join('');
     if (n < UNLOCK2){
       c2.innerHTML = `<div class="court2-status"><span class="lock">⏳</span><div class="txt">
         <b>第二場候補中（${n}/${UNLOCK2}）</b>　再 ${UNLOCK2-n} 人就成立，先排隊：
@@ -433,9 +469,10 @@ function render(){
 
   /* 候補（>16） */
   const bench = document.getElementById('benchSec');
-  bench.innerHTML = n > CAP_TOTAL
+  const waiters = signups.filter(p => p.pos > CAP_TOTAL).sort((a,b)=>a.pos-b.pos);
+  bench.innerHTML = waiters.length
     ? `<div class="bench"><h3>WAITLIST／候補席</h3><div class="bench-chips">
-        ${signups.slice(CAP_TOTAL).map((p,i)=>chipHTML(CAP_TOTAL+i,p)).join('')}</div></div>`
+        ${waiters.map(p=>chipHTML(p)).join('')}</div></div>`
     : '';
 
   /* 下拉選單：名單－已報名 */
@@ -448,10 +485,10 @@ function render(){
   } else if (!avail.length){
     sel.innerHTML = `<option>全員都報名了 💪</option>`; go.disabled = true;
   } else {
-    const cur = sel.value;
+    if (pendingName && !avail.includes(pendingName)) pendingName = null;
     sel.innerHTML = `<option value="" disabled selected>選你的名字</option>` +
       avail.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
-    if (avail.includes(cur)) sel.value = cur;
+    if (pendingName) sel.value = pendingName;
     go.disabled = false;
   }
 
@@ -466,19 +503,46 @@ function renderHistory(){
 }
 
 /* ================= 互動 ================= */
+/* 流程：下拉選名字 → 場上空位開始閃 → 點位置完成報名；按「報名」則自動排最前空位 */
+async function doSignup(name, pos){
+  try{
+    absorb(await api('signup', {date: DKEY, name, pos}));
+    online = true; pendingName = null;
+    const me = signups.find(p => p.name === name);
+    toast(me && me.pos <= CAP1 ? `✅ ${name} 站上 NO.${me.pos}！` : `✅ ${name} 已排入，目前共 ${signups.length} 人`);
+  }catch(e){
+    online = navigator.onLine !== false;
+    toast(String(e).includes('taken') ? '這個位置剛被搶走，換一格吧' : '連線失敗，請再試一次');
+  }
+  render();
+}
+
+document.getElementById('nameSel').addEventListener('change', e => {
+  if (refreshStatus() !== 'open') return;
+  pendingName = e.target.value || null;
+  render();
+  if (pendingName){
+    const hasEmpty = signups.filter(p => p.pos <= CAP1).length < CAP1;
+    toast(hasEmpty ? `${pendingName}，點場上的空位完成報名` : '第一場已滿，按「報名」排入第二場');
+  }
+});
+
 document.getElementById('goBtn').addEventListener('click', async () => {
   const name = document.getElementById('nameSel').value;
   if (!name) { toast('先選名字再報名'); return; }
-  try{
-    absorb(await api('signup', {date: DKEY, name}));
-    online = true;
-    toast(`✅ ${name} 上場！目前 ${signups.length} 人`);
-  }catch(e){ online = false; toast('連線失敗，請再試一次'); }
-  render();
+  await doSignup(name, null);   // 不指定位置 → 伺服器排最前空位
 });
 
-/* 點名字晶片 → 取消報名 */
 document.body.addEventListener('click', async e => {
+  /* 點空位 → 用已選的名字報名到該位置 */
+  const empty = e.target.closest('.slot.empty');
+  if (empty && empty.dataset.pos){
+    if (refreshStatus() !== 'open') return;
+    if (!pendingName){ toast('先在下面選你的名字'); return; }
+    await doSignup(pendingName, Number(empty.dataset.pos));
+    return;
+  }
+  /* 點名字晶片 → 取消報名 */
   const chip = e.target.closest('.slot.filled');
   if (!chip) return;
   if (refreshStatus() !== 'open'){ toast('已截止，名單鎖定'); return; }
@@ -489,6 +553,17 @@ document.body.addEventListener('click', async e => {
     online = true;
     toast(`已取消 ${name} 的報名`);
   }catch(e){ online = false; toast('連線失敗，請再試一次'); }
+  render();
+});
+
+/* 團長改場地號（1-6，全隊同步） */
+document.getElementById('courtSel').addEventListener('change', async e => {
+  const court = Number(e.target.value);
+  try{
+    absorb(await api('setcourt', {date: DKEY, court}));
+    online = true;
+    toast(`場地改為 ${court} 號場`);
+  }catch(err){ online = false; toast('連線失敗，請再試一次'); }
   render();
 });
 
