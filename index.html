@@ -70,10 +70,11 @@ h1{
 }
 h1 .accent{color:var(--lime)}
 .date-block{display:flex;align-items:flex-end;gap:14px;margin-top:14px;flex-wrap:wrap}
-.date-num{font-family:var(--font-num);font-size:clamp(56px,17vw,84px);line-height:.78;letter-spacing:.02em;color:var(--line)}
-.date-meta{padding-bottom:0}
-.date-meta .weekday{font-family:var(--font-display);font-size:20px;line-height:1.15;color:var(--lime);letter-spacing:.2em}
-.date-meta .time{font-family:var(--font-num);font-size:20px;line-height:.8;letter-spacing:.05em;color:var(--ink)}
+.date-num{font-family:var(--font-num);font-size:clamp(56px,17vw,84px);line-height:.9;letter-spacing:.02em;color:var(--line)}
+/* 排版與原版完全相同，只用 translateY 平移整塊做底部切齊（校準值由像素量測而來） */
+.date-meta{padding-bottom:6px;transform:translateY(12px)}
+.date-meta .weekday{font-family:var(--font-display);font-size:20px;color:var(--lime);letter-spacing:.2em}
+.date-meta .time{font-family:var(--font-num);font-size:20px;letter-spacing:.05em;color:var(--ink)}
 .venue{margin-top:10px;font-size:14px;color:var(--dim);letter-spacing:.08em}
 .venue b{color:var(--ink);font-weight:500}
 .status-row{display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap}
