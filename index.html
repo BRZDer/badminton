@@ -204,33 +204,33 @@ h1 .accent{color:var(--lime)}
 /* 未解鎖時只顯示上半場（網子就是切口）＋底部淡出：八格空位原本白佔一整屏。
    ⚠️ 容器裁短了，但 .slots 必須維持原本 610:570 的完整高度，
    名牌與場線的對位才不會跑掉——第 9~12 人報名時上半場那四格要看得一清二楚。 */
-.court-card.ghost{aspect-ratio:610/400}
+.court-card.ghost{
+  aspect-ratio:610/430;
+  /* 真的淡出成透明（原本是蓋一層深色假裝，所以看起來不夠明顯）。
+     70% 之後開始化掉，到卡片底緣剛好全透明，鎖那行字就接在這裡。 */
+  -webkit-mask-image:linear-gradient(to bottom,#000 70%,rgba(0,0,0,.45) 88%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 70%,rgba(0,0,0,.45) 88%,transparent 100%);
+}
 .court-card.ghost .slots{inset:0 0 auto 0;aspect-ratio:610/570}
 /* 已站上第二場的名牌不跟著壓暗，只淡化場線 */
 .court-card.ghost .court-svg,
 .court-card.ghost .court-label,
 .court-card.ghost .court-count{opacity:.55;filter:saturate(.5)}
 .court-card.ghost .slots{opacity:1;filter:none}
-.court-card.ghost::after{
-  content:"";position:absolute;left:0;right:0;bottom:0;height:30%;pointer-events:none;z-index:1;
-  background:linear-gradient(to bottom, transparent, rgba(12,53,42,.25) 40%,
-                             rgba(12,53,42,.72) 70%, rgba(12,53,42,.95));
-}
 /* 解鎖後回到完整球場 */
-.court-card.unlocked{aspect-ratio:auto}
+.court-card.unlocked{aspect-ratio:auto;-webkit-mask-image:none;mask-image:none}
 .court-card.unlocked .slots{inset:0;aspect-ratio:auto}
 .court-card.unlocked .court-svg,
 .court-card.unlocked .court-label,
 .court-card.unlocked .court-count,
 .court-card.unlocked .slots{opacity:1;filter:none}
-/* 提示改成貼卡片底部的計分板橫條：置中會壓到第 9~12 格的名牌 */
+/* 鎖那行字改成球場「外面」的一行：留在卡片裡會被上面的淡出遮罩一起化掉 */
 .unlock-overlay{
-  position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0;
-  z-index:2;
+  display:flex;justify-content:center;margin-top:-2px;
 }
 .unlock-box{
-  background:rgba(12,53,42,.9);border-top:1px dashed rgba(239,233,216,.35);
-  padding:8px 14px 10px;text-align:center;font-size:12.5px;color:var(--ink);line-height:1.5;
+  background:none;border:none;padding:0 14px;
+  text-align:center;font-size:12.5px;color:var(--ink);line-height:1.5;
   width:100%;white-space:nowrap;overflow:hidden;
 }
 .unlock-box b{color:var(--lime)}
@@ -410,8 +410,8 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
       <div class="court-label">第二場</div>
       <div class="court-count" id="count2">0<small> / 8</small></div>
       <div class="slots" id="slots2"></div>
-      <div class="unlock-overlay" id="unlockOverlay"></div>
     </div>
+    <div class="unlock-overlay" id="unlockOverlay"></div>
   </section>
 
   <!-- 候補席 -->
