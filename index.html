@@ -96,10 +96,15 @@ h1 .accent{color:var(--lime)}
 .week-tab.on .d,.week-tab.on .c{color:var(--court)}
 .week-tab{position:relative}
 .week-tab .edit{
-  position:absolute;top:4px;right:6px;font-size:11px;opacity:.55;line-height:1;
-  padding:3px;cursor:pointer;
+  position:absolute;top:0;right:0;font-size:12px;opacity:.55;line-height:1;
+  padding:6px 8px 10px 12px;cursor:pointer;overflow:hidden;
 }
 .week-tab.on .edit{opacity:.8}
+/* 透明的原生日期欄位疊在 ✎ 上：手機點到的就是真輸入框，原生選單必彈 */
+.week-tab .edit input.tabdate{
+  position:absolute;inset:0;opacity:0;border:0;padding:0;margin:0;
+  width:100%;height:100%;cursor:pointer;-webkit-appearance:none;
+}
 
 /* === 球場（SVG 畫線 + 名字上場） === */
 .court-sec{margin-top:22px;position:relative}
@@ -170,7 +175,9 @@ h1 .accent{color:var(--lime)}
 /* 多行拆字名牌：行數越多字越小，直排合體 */
 .slot.filled.multi{font-size:12.5px;line-height:1.18;letter-spacing:.1em}
 .slot.filled.multi.tall{font-size:10.5px;line-height:1.1}
-.slot.filled .stack{display:block;text-align:center}
+/* 只有輸入時用空格自行分段（<br>）才換行；其他一律單行，太長就縮字 */
+.slot.filled .stack{display:block;text-align:center;white-space:nowrap;max-width:100%;overflow:hidden}
+
 .slot.filled .num{
   font-family:var(--font-num);font-size:11px;color:var(--court-mat);
   position:absolute;top:3px;left:7px;font-weight:400;
@@ -271,11 +278,12 @@ h1 .accent{color:var(--lime)}
 .fold[open] summary::after{transform:rotate(45deg)}
 .fold-body{padding:2px 16px 16px}
 .add-row{display:flex;gap:8px}
-.add-row input{
+.add-row textarea{
   flex:1;font-family:var(--font-body);font-size:15px;padding:10px 12px;border-radius:9px;
   border:1px solid rgba(239,233,216,.3);background:rgba(0,0,0,.25);color:var(--ink);min-width:0;
+  resize:none;line-height:1.5;
 }
-.add-row input::placeholder{color:rgba(157,184,171,.6)}
+.add-row textarea::placeholder{color:rgba(157,184,171,.6)}
 .btn-add{background:var(--lime);color:var(--court);font-weight:900;border:none;border-radius:9px;padding:10px 16px;font-size:14px;cursor:pointer}
 .hint{font-size:12px;color:var(--dim);margin-top:9px;line-height:1.6}
 .history-item{padding:10px 0;border-bottom:1px dashed rgba(239,233,216,.15);font-size:13px;line-height:1.7}
@@ -319,7 +327,7 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
       <span class="countdown" id="countdown"></span>
     </div>
     <div class="week-tabs rise" style="animation-delay:.34s" id="weekTabs"></div>
-    <input type="date" id="tabDatePick" style="position:fixed;left:-9999px;top:0;opacity:0">
+    
   </header>
 
   <div class="offline" id="offlineBox">⚠️ 連線不到報名資料庫，顯示的是快取名單。請檢查網路後重新整理。</div>
@@ -381,7 +389,7 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
     <summary>找不到名字？新增隊員</summary>
     <div class="fold-body">
       <div class="add-row">
-        <input id="newName" maxlength="14" placeholder="輸入名字（空格＝換行直排）">
+        <textarea id="newName" maxlength="14" rows="1" placeholder="輸入名字（Enter 換行直排，最多三行）"></textarea>
         <button class="btn-add" id="addBtn">加入</button>
       </div>
       <div class="hint">加入後所有人的選單都會出現這個名字，只需要加一次。拆字名可用空格分行直排，例：「艹艹 一一 羋羋」會排成三行＝華華。</div>
@@ -561,7 +569,10 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 function chipHTML(p){
   const parts = String(p.name).split(' ').filter(Boolean);
   const multi = parts.length > 1 ? ` multi${parts.length > 2 ? ' tall' : ''}` : '';
-  return `<div class="slot filled${multi}" data-id="${esc(p.id)}" data-name="${esc(p.name)}" title="點一下取消報名">
+  /* 單段長名不換行、按字數縮字（96px 顯示預算，最小 8px） */
+  const fs = parts.length === 1 && p.name.length > 6
+    ? ` style="font-size:${Math.max(8, Math.floor(96 / p.name.length))}px;letter-spacing:0"` : '';
+  return `<div class="slot filled${multi}"${fs} data-id="${esc(p.id)}" data-name="${esc(p.name)}" title="點一下取消報名">
     <span class="num">${p.pos}</span><span class="stack">${parts.map(esc).join('<br>')}</span></div>`;
 }
 function render(){
@@ -576,10 +587,10 @@ function render(){
   document.getElementById('weekTabs').innerHTML = WEEK_KEYS.map((k, i) => {
     const c = weekCounts[k];
     const label = `週${'日一二三四五六'[SATS[i].getDay()]}`;
-    return `<button class="week-tab${i === selIdx ? ' on' : ''}" data-idx="${i}">
+    return `<div class="week-tab${i === selIdx ? ' on' : ''}" data-idx="${i}" role="button">
       ${label}<span class="d">${mdOf(SATS[i])}</span>
       <span class="c">${c > 0 ? c + ' 人已報' : '尚無人報名'}</span>
-      <span class="edit" data-edit="${i}" title="改日期">✎</span></button>`;
+      <span class="edit" title="改日期">✎<input type="date" class="tabdate" data-idx="${i}" value="${k}" min="${dkeyOf(new Date())}"></span></div>`;
   }).join('');
 
   /* 場地號同步（團長設定） */
@@ -743,19 +754,9 @@ document.body.addEventListener('click', async e => {
   render();
 });
 
-/* 切換週次／自訂日期（✎ 開日期選擇器，改完全隊同步） */
-let editSlot = null;
+/* 切換週次／自訂日期（✎ 上疊的原生日期欄位，改完全隊同步） */
 document.getElementById('weekTabs').addEventListener('click', e => {
-  const pen = e.target.closest('[data-edit]');
-  if (pen){
-    e.stopPropagation();
-    editSlot = Number(pen.dataset.edit);
-    const picker = document.getElementById('tabDatePick');
-    picker.value = WEEK_KEYS[editSlot];
-    picker.min = dkeyOf(new Date());
-    if (picker.showPicker) picker.showPicker(); else picker.click();
-    return;
-  }
+  if (e.target.closest('.edit')) return;   // 點到日期欄位不切頁
   const tab = e.target.closest('.week-tab');
   if (!tab) return;
   const i = Number(tab.dataset.idx);
@@ -764,13 +765,15 @@ document.getElementById('weekTabs').addEventListener('click', e => {
   pendingName = null; signups = []; history = [];
   render(); pull();
 });
-document.getElementById('tabDatePick').addEventListener('change', async e => {
-  const date = e.target.value;
-  if (!date || editSlot == null) return;
+document.getElementById('weekTabs').addEventListener('change', async e => {
+  const inp = e.target.closest('input.tabdate');
+  if (!inp || !inp.value) return;
+  const slot = Number(inp.dataset.idx);
+  const date = inp.value;
   try{
-    absorb(await api('settab', {slot: editSlot + 1, date}));
+    absorb(await api('settab', {slot: slot + 1, date}));
     online = true;
-    selIdx = editSlot; computeSessions();
+    selIdx = slot; computeSessions();
     pendingName = null; signups = []; history = [];
     toast(`場次日期改為 ${date.slice(5).replace('-','/')}`);
     render(); pull();
@@ -779,7 +782,6 @@ document.getElementById('tabDatePick').addEventListener('change', async e => {
     toast(msg.includes('已在其他頁籤') ? '這個日期已經有頁籤了' : msg.includes('過去的日期') ? '不能選過去的日期' : '連線失敗，請再試一次');
     render();
   }
-  editSlot = null;
 });
 
 /* 團長改場地號（1-6，全隊同步） */
@@ -796,13 +798,13 @@ document.getElementById('courtSel').addEventListener('change', async e => {
 /* 新增名字（進共享 roster） */
 async function addName(){
   const inp = document.getElementById('newName');
-  const name = inp.value.trim().replace(/\s+/g, ' ');   // 連續空格收斂成一個（一個空格＝一次換行）
+  const name = inp.value.split(/[\n\s]+/).filter(Boolean).slice(0, 3).join(' ');   // Enter/空格＝分段直排，最多三段
   if (!name) return;
   if (name.length > 14) { toast('名字太長了'); return; }
-  if (roster.includes(name)) { toast('名單裡已經有這個名字'); inp.value = ''; render(); return; }
+  if (roster.includes(name)) { toast('名單裡已經有這個名字'); inp.value = ''; inp.rows = 1; render(); return; }
   try{
     absorb(await api('addname', {name, date: DKEY}));
-    online = true; inp.value = '';
+    online = true; inp.value = ''; inp.rows = 1;
     /* 加完直接進入選位流程：收合折疊區、名字上選單、空位開始閃
        第一場已滿 → 不用選，直接自動排入下一個號碼（9 起跳） */
     if (refreshStatus() === 'open' && !signups.some(p => p.name === name)){
@@ -824,8 +826,12 @@ async function addName(){
   render();
 }
 document.getElementById('addBtn').addEventListener('click', addName);
+/* Enter＝換行（直排分段），最多三行；送出用「加入」按鈕 */
 document.getElementById('newName').addEventListener('keydown', e => {
-  if (e.key === 'Enter'){ e.preventDefault(); addName(); }
+  if (e.key === 'Enter' && e.target.value.split('\n').length >= 3) e.preventDefault();
+});
+document.getElementById('newName').addEventListener('input', e => {
+  e.target.rows = Math.min(3, e.target.value.split('\n').length);
 });
 
 /* 分享 */

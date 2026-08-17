@@ -102,10 +102,15 @@ h1 .accent{color:var(--lime)}
 .week-tab.on .d,.week-tab.on .c{color:var(--court)}
 .week-tab{position:relative}
 .week-tab .edit{
-  position:absolute;top:4px;right:6px;font-size:11px;opacity:.55;line-height:1;
-  padding:3px;cursor:pointer;
+  position:absolute;top:0;right:0;font-size:12px;opacity:.55;line-height:1;
+  padding:6px 8px 10px 12px;cursor:pointer;overflow:hidden;
 }
 .week-tab.on .edit{opacity:.8}
+/* \u900F\u660E\u7684\u539F\u751F\u65E5\u671F\u6B04\u4F4D\u758A\u5728 \u270E \u4E0A\uFF1A\u624B\u6A5F\u9EDE\u5230\u7684\u5C31\u662F\u771F\u8F38\u5165\u6846\uFF0C\u539F\u751F\u9078\u55AE\u5FC5\u5F48 */
+.week-tab .edit input.tabdate{
+  position:absolute;inset:0;opacity:0;border:0;padding:0;margin:0;
+  width:100%;height:100%;cursor:pointer;-webkit-appearance:none;
+}
 
 /* === \u7403\u5834\uFF08SVG \u756B\u7DDA + \u540D\u5B57\u4E0A\u5834\uFF09 === */
 .court-sec{margin-top:22px;position:relative}
@@ -176,7 +181,9 @@ h1 .accent{color:var(--lime)}
 /* \u591A\u884C\u62C6\u5B57\u540D\u724C\uFF1A\u884C\u6578\u8D8A\u591A\u5B57\u8D8A\u5C0F\uFF0C\u76F4\u6392\u5408\u9AD4 */
 .slot.filled.multi{font-size:12.5px;line-height:1.18;letter-spacing:.1em}
 .slot.filled.multi.tall{font-size:10.5px;line-height:1.1}
-.slot.filled .stack{display:block;text-align:center}
+/* \u53EA\u6709\u8F38\u5165\u6642\u7528\u7A7A\u683C\u81EA\u884C\u5206\u6BB5\uFF08<br>\uFF09\u624D\u63DB\u884C\uFF1B\u5176\u4ED6\u4E00\u5F8B\u55AE\u884C\uFF0C\u592A\u9577\u5C31\u7E2E\u5B57 */
+.slot.filled .stack{display:block;text-align:center;white-space:nowrap;max-width:100%;overflow:hidden}
+
 .slot.filled .num{
   font-family:var(--font-num);font-size:11px;color:var(--court-mat);
   position:absolute;top:3px;left:7px;font-weight:400;
@@ -277,11 +284,12 @@ h1 .accent{color:var(--lime)}
 .fold[open] summary::after{transform:rotate(45deg)}
 .fold-body{padding:2px 16px 16px}
 .add-row{display:flex;gap:8px}
-.add-row input{
+.add-row textarea{
   flex:1;font-family:var(--font-body);font-size:15px;padding:10px 12px;border-radius:9px;
   border:1px solid rgba(239,233,216,.3);background:rgba(0,0,0,.25);color:var(--ink);min-width:0;
+  resize:none;line-height:1.5;
 }
-.add-row input::placeholder{color:rgba(157,184,171,.6)}
+.add-row textarea::placeholder{color:rgba(157,184,171,.6)}
 .btn-add{background:var(--lime);color:var(--court);font-weight:900;border:none;border-radius:9px;padding:10px 16px;font-size:14px;cursor:pointer}
 .hint{font-size:12px;color:var(--dim);margin-top:9px;line-height:1.6}
 .history-item{padding:10px 0;border-bottom:1px dashed rgba(239,233,216,.15);font-size:13px;line-height:1.7}
@@ -325,7 +333,7 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
       <span class="countdown" id="countdown"></span>
     </div>
     <div class="week-tabs rise" style="animation-delay:.34s" id="weekTabs"></div>
-    <input type="date" id="tabDatePick" style="position:fixed;left:-9999px;top:0;opacity:0">
+    
   </header>
 
   <div class="offline" id="offlineBox">\u26A0\uFE0F \u9023\u7DDA\u4E0D\u5230\u5831\u540D\u8CC7\u6599\u5EAB\uFF0C\u986F\u793A\u7684\u662F\u5FEB\u53D6\u540D\u55AE\u3002\u8ACB\u6AA2\u67E5\u7DB2\u8DEF\u5F8C\u91CD\u65B0\u6574\u7406\u3002</div>
@@ -387,7 +395,7 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
     <summary>\u627E\u4E0D\u5230\u540D\u5B57\uFF1F\u65B0\u589E\u968A\u54E1</summary>
     <div class="fold-body">
       <div class="add-row">
-        <input id="newName" maxlength="14" placeholder="\u8F38\u5165\u540D\u5B57\uFF08\u7A7A\u683C\uFF1D\u63DB\u884C\u76F4\u6392\uFF09">
+        <textarea id="newName" maxlength="14" rows="1" placeholder="\u8F38\u5165\u540D\u5B57\uFF08Enter \u63DB\u884C\u76F4\u6392\uFF0C\u6700\u591A\u4E09\u884C\uFF09"></textarea>
         <button class="btn-add" id="addBtn">\u52A0\u5165</button>
       </div>
       <div class="hint">\u52A0\u5165\u5F8C\u6240\u6709\u4EBA\u7684\u9078\u55AE\u90FD\u6703\u51FA\u73FE\u9019\u500B\u540D\u5B57\uFF0C\u53EA\u9700\u8981\u52A0\u4E00\u6B21\u3002\u62C6\u5B57\u540D\u53EF\u7528\u7A7A\u683C\u5206\u884C\u76F4\u6392\uFF0C\u4F8B\uFF1A\u300C\u8279\u8279 \u4E00\u4E00 \u7F8B\u7F8B\u300D\u6703\u6392\u6210\u4E09\u884C\uFF1D\u83EF\u83EF\u3002</div>
@@ -567,7 +575,10 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 function chipHTML(p){
   const parts = String(p.name).split(' ').filter(Boolean);
   const multi = parts.length > 1 ? \` multi\${parts.length > 2 ? ' tall' : ''}\` : '';
-  return \`<div class="slot filled\${multi}" data-id="\${esc(p.id)}" data-name="\${esc(p.name)}" title="\u9EDE\u4E00\u4E0B\u53D6\u6D88\u5831\u540D">
+  /* \u55AE\u6BB5\u9577\u540D\u4E0D\u63DB\u884C\u3001\u6309\u5B57\u6578\u7E2E\u5B57\uFF0896px \u986F\u793A\u9810\u7B97\uFF0C\u6700\u5C0F 8px\uFF09 */
+  const fs = parts.length === 1 && p.name.length > 6
+    ? \` style="font-size:\${Math.max(8, Math.floor(96 / p.name.length))}px;letter-spacing:0"\` : '';
+  return \`<div class="slot filled\${multi}"\${fs} data-id="\${esc(p.id)}" data-name="\${esc(p.name)}" title="\u9EDE\u4E00\u4E0B\u53D6\u6D88\u5831\u540D">
     <span class="num">\${p.pos}</span><span class="stack">\${parts.map(esc).join('<br>')}</span></div>\`;
 }
 function render(){
@@ -582,10 +593,10 @@ function render(){
   document.getElementById('weekTabs').innerHTML = WEEK_KEYS.map((k, i) => {
     const c = weekCounts[k];
     const label = \`\u9031\${'\u65E5\u4E00\u4E8C\u4E09\u56DB\u4E94\u516D'[SATS[i].getDay()]}\`;
-    return \`<button class="week-tab\${i === selIdx ? ' on' : ''}" data-idx="\${i}">
+    return \`<div class="week-tab\${i === selIdx ? ' on' : ''}" data-idx="\${i}" role="button">
       \${label}<span class="d">\${mdOf(SATS[i])}</span>
       <span class="c">\${c > 0 ? c + ' \u4EBA\u5DF2\u5831' : '\u5C1A\u7121\u4EBA\u5831\u540D'}</span>
-      <span class="edit" data-edit="\${i}" title="\u6539\u65E5\u671F">\u270E</span></button>\`;
+      <span class="edit" title="\u6539\u65E5\u671F">\u270E<input type="date" class="tabdate" data-idx="\${i}" value="\${k}" min="\${dkeyOf(new Date())}"></span></div>\`;
   }).join('');
 
   /* \u5834\u5730\u865F\u540C\u6B65\uFF08\u5718\u9577\u8A2D\u5B9A\uFF09 */
@@ -749,19 +760,9 @@ document.body.addEventListener('click', async e => {
   render();
 });
 
-/* \u5207\u63DB\u9031\u6B21\uFF0F\u81EA\u8A02\u65E5\u671F\uFF08\u270E \u958B\u65E5\u671F\u9078\u64C7\u5668\uFF0C\u6539\u5B8C\u5168\u968A\u540C\u6B65\uFF09 */
-let editSlot = null;
+/* \u5207\u63DB\u9031\u6B21\uFF0F\u81EA\u8A02\u65E5\u671F\uFF08\u270E \u4E0A\u758A\u7684\u539F\u751F\u65E5\u671F\u6B04\u4F4D\uFF0C\u6539\u5B8C\u5168\u968A\u540C\u6B65\uFF09 */
 document.getElementById('weekTabs').addEventListener('click', e => {
-  const pen = e.target.closest('[data-edit]');
-  if (pen){
-    e.stopPropagation();
-    editSlot = Number(pen.dataset.edit);
-    const picker = document.getElementById('tabDatePick');
-    picker.value = WEEK_KEYS[editSlot];
-    picker.min = dkeyOf(new Date());
-    if (picker.showPicker) picker.showPicker(); else picker.click();
-    return;
-  }
+  if (e.target.closest('.edit')) return;   // \u9EDE\u5230\u65E5\u671F\u6B04\u4F4D\u4E0D\u5207\u9801
   const tab = e.target.closest('.week-tab');
   if (!tab) return;
   const i = Number(tab.dataset.idx);
@@ -770,13 +771,15 @@ document.getElementById('weekTabs').addEventListener('click', e => {
   pendingName = null; signups = []; history = [];
   render(); pull();
 });
-document.getElementById('tabDatePick').addEventListener('change', async e => {
-  const date = e.target.value;
-  if (!date || editSlot == null) return;
+document.getElementById('weekTabs').addEventListener('change', async e => {
+  const inp = e.target.closest('input.tabdate');
+  if (!inp || !inp.value) return;
+  const slot = Number(inp.dataset.idx);
+  const date = inp.value;
   try{
-    absorb(await api('settab', {slot: editSlot + 1, date}));
+    absorb(await api('settab', {slot: slot + 1, date}));
     online = true;
-    selIdx = editSlot; computeSessions();
+    selIdx = slot; computeSessions();
     pendingName = null; signups = []; history = [];
     toast(\`\u5834\u6B21\u65E5\u671F\u6539\u70BA \${date.slice(5).replace('-','/')}\`);
     render(); pull();
@@ -785,7 +788,6 @@ document.getElementById('tabDatePick').addEventListener('change', async e => {
     toast(msg.includes('\u5DF2\u5728\u5176\u4ED6\u9801\u7C64') ? '\u9019\u500B\u65E5\u671F\u5DF2\u7D93\u6709\u9801\u7C64\u4E86' : msg.includes('\u904E\u53BB\u7684\u65E5\u671F') ? '\u4E0D\u80FD\u9078\u904E\u53BB\u7684\u65E5\u671F' : '\u9023\u7DDA\u5931\u6557\uFF0C\u8ACB\u518D\u8A66\u4E00\u6B21');
     render();
   }
-  editSlot = null;
 });
 
 /* \u5718\u9577\u6539\u5834\u5730\u865F\uFF081-6\uFF0C\u5168\u968A\u540C\u6B65\uFF09 */
@@ -802,13 +804,13 @@ document.getElementById('courtSel').addEventListener('change', async e => {
 /* \u65B0\u589E\u540D\u5B57\uFF08\u9032\u5171\u4EAB roster\uFF09 */
 async function addName(){
   const inp = document.getElementById('newName');
-  const name = inp.value.trim().replace(/\\s+/g, ' ');   // \u9023\u7E8C\u7A7A\u683C\u6536\u6582\u6210\u4E00\u500B\uFF08\u4E00\u500B\u7A7A\u683C\uFF1D\u4E00\u6B21\u63DB\u884C\uFF09
+  const name = inp.value.split(/[\\n\\s]+/).filter(Boolean).slice(0, 3).join(' ');   // Enter/\u7A7A\u683C\uFF1D\u5206\u6BB5\u76F4\u6392\uFF0C\u6700\u591A\u4E09\u6BB5
   if (!name) return;
   if (name.length > 14) { toast('\u540D\u5B57\u592A\u9577\u4E86'); return; }
-  if (roster.includes(name)) { toast('\u540D\u55AE\u88E1\u5DF2\u7D93\u6709\u9019\u500B\u540D\u5B57'); inp.value = ''; render(); return; }
+  if (roster.includes(name)) { toast('\u540D\u55AE\u88E1\u5DF2\u7D93\u6709\u9019\u500B\u540D\u5B57'); inp.value = ''; inp.rows = 1; render(); return; }
   try{
     absorb(await api('addname', {name, date: DKEY}));
-    online = true; inp.value = '';
+    online = true; inp.value = ''; inp.rows = 1;
     /* \u52A0\u5B8C\u76F4\u63A5\u9032\u5165\u9078\u4F4D\u6D41\u7A0B\uFF1A\u6536\u5408\u6298\u758A\u5340\u3001\u540D\u5B57\u4E0A\u9078\u55AE\u3001\u7A7A\u4F4D\u958B\u59CB\u9583
        \u7B2C\u4E00\u5834\u5DF2\u6EFF \u2192 \u4E0D\u7528\u9078\uFF0C\u76F4\u63A5\u81EA\u52D5\u6392\u5165\u4E0B\u4E00\u500B\u865F\u78BC\uFF089 \u8D77\u8DF3\uFF09 */
     if (refreshStatus() === 'open' && !signups.some(p => p.name === name)){
@@ -830,8 +832,12 @@ async function addName(){
   render();
 }
 document.getElementById('addBtn').addEventListener('click', addName);
+/* Enter\uFF1D\u63DB\u884C\uFF08\u76F4\u6392\u5206\u6BB5\uFF09\uFF0C\u6700\u591A\u4E09\u884C\uFF1B\u9001\u51FA\u7528\u300C\u52A0\u5165\u300D\u6309\u9215 */
 document.getElementById('newName').addEventListener('keydown', e => {
-  if (e.key === 'Enter'){ e.preventDefault(); addName(); }
+  if (e.key === 'Enter' && e.target.value.split('\\n').length >= 3) e.preventDefault();
+});
+document.getElementById('newName').addEventListener('input', e => {
+  e.target.rows = Math.min(3, e.target.value.split('\\n').length);
 });
 
 /* \u5206\u4EAB */
@@ -1111,7 +1117,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-rRRFSd/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-WdSSTj/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -1143,7 +1149,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-rRRFSd/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-WdSSTj/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
