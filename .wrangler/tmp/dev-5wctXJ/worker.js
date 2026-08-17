@@ -439,20 +439,19 @@ const dkeyOf = d => \`\${d.getFullYear()}-\${pad(d.getMonth()+1)}-\${pad(d.getDa
 const mdOf = d => \`\${pad(d.getMonth()+1)}.\${pad(d.getDate())}\`;
 /* \u4E09\u500B\u5834\u6B21\uFF1A\u7B2C 1 \u9801\u56FA\u5B9A\u6700\u8FD1\u7684\u9031\u516D\uFF1B\u7B2C 2\u30013 \u9801\u53EF\u7531\u5718\u968A\u81EA\u8A02\u65E5\u671F\uFF08\u5B58 KV \u5168\u968A\u540C\u6B65\uFF09\uFF0C
    \u6C92\u81EA\u8A02\u6642\u9810\u8A2D\u4E0B\u9031\u516D\uFF0F\u4E0B\u4E0B\u9031\u516D */
-let customTabs = [null, null];   // \u5C0D\u61C9\u9801\u7C64 2\u30013 \u7684\u81EA\u8A02\u65E5\u671F\u5B57\u4E32
+let serverTabs = null;   // \u4F3A\u670D\u5668\u8F2A\u8F49\u5F8C\u7684\u4E09\u500B\u5834\u6B21\u65E5\u671F\uFF08\u5B57\u4E32\uFF09\uFF0C\u672A\u53D6\u5F97\u524D\u7528\u9810\u8A2D
 let SATS = [], WEEK_KEYS = [];
 let selIdx = 0, DKEY = '';
 function computeSessions(){
-  const base = sessionSaturday();
-  SATS = [0, 1, 2].map(i => { const d = new Date(base); d.setDate(d.getDate() + 7 * i); return d; });
-  [1, 2].forEach(j => {
-    const c = customTabs[j-1];
-    if (c && /^\\d{4}-\\d{2}-\\d{2}$/.test(c)){
-      const [y, m, dd] = c.split('-').map(Number);
-      SATS[j] = new Date(y, m - 1, dd);
-    }
-  });
-  WEEK_KEYS = SATS.map(dkeyOf);
+  let keys;
+  if (Array.isArray(serverTabs) && serverTabs.length === 3){
+    keys = serverTabs;
+  } else {
+    const base = sessionSaturday();
+    keys = [0, 1, 2].map(i => { const d = new Date(base); d.setDate(d.getDate() + 7 * i); return dkeyOf(d); });
+  }
+  WEEK_KEYS = keys;
+  SATS = keys.map(k => { const [y, m, dd] = k.split('-').map(Number); return new Date(y, m - 1, dd); });
   DKEY = WEEK_KEYS[selIdx];
 }
 computeSessions();
@@ -489,7 +488,7 @@ let online = true;
 /* DEMO \u6C99\u76D2\u6A21\u5F0F\uFF08?demo=1\uFF09\uFF1A\u5168\u90E8\u5728\u672C\u9801\u8A18\u61B6\u9AD4\u6A21\u64EC\uFF0C\u4E0D\u78B0\u6B63\u5F0F\u8CC7\u6599\u5EAB */
 const DEMO = new URLSearchParams(location.search).has('demo');
 const demoStore = {
-  tabs:[null,null],
+  tabs:null,
   roster:['Miller','\u5973\u795E','\u7C73\u9769\u529B','\u6728\u6BCF\u5973\u81E3'],
   history:[{date:'2026-08-09',names:['\u7C73\u9769\u529B','\u5973\u795E','Miller']}],
   weeks:{}
@@ -519,6 +518,7 @@ function demoApi(path, body){
   if (path === 'addname' && !demoStore.roster.includes(body.name)) demoStore.roster.push(body.name);
   if (path === 'delname') demoStore.roster = demoStore.roster.filter(x => x !== body.name);
   if (path === 'setcourt') w.court = body.court;
+  if (!demoStore.tabs) demoStore.tabs = [...WEEK_KEYS];
   if (path === 'settab') demoStore.tabs[body.slot - 1] = body.date;
   const counts = {};
   WEEK_KEYS.forEach(k => { counts[k] = demoWeek(k).signups.length; });
@@ -539,8 +539,8 @@ function absorb(s){
   if (Array.isArray(s.roster)) roster = s.roster;
   if (Array.isArray(s.history)) history = s.history;
   if (s.court >= 1) courtNo = s.court;
-  if (Array.isArray(s.tabs)){
-    customTabs = [s.tabs[0] || null, s.tabs[1] || null];
+  if (Array.isArray(s.tabs) && s.tabs.length === 3){
+    serverTabs = s.tabs;
     computeSessions();
   }
   if (s.counts) weekCounts = s.counts;
@@ -581,11 +581,11 @@ function render(){
     \`\${['SUN','MON','TUE','WED','THU','FRI','SAT'][selDate.getDay()]}\uFF0F\u9031\${'\u65E5\u4E00\u4E8C\u4E09\u56DB\u4E94\u516D'[selDate.getDay()]}\`;
   document.getElementById('weekTabs').innerHTML = WEEK_KEYS.map((k, i) => {
     const c = weekCounts[k];
-    const label = i === 0 ? '\u672C\u9031' : customTabs[i-1] ? '\u52A0\u958B' : (i === 1 ? '\u4E0B\u9031' : '\u4E0B\u4E0B\u9031');
+    const label = \`\u9031\${'\u65E5\u4E00\u4E8C\u4E09\u56DB\u4E94\u516D'[SATS[i].getDay()]}\`;
     return \`<button class="week-tab\${i === selIdx ? ' on' : ''}" data-idx="\${i}">
       \${label}<span class="d">\${mdOf(SATS[i])}</span>
       <span class="c">\${c > 0 ? c + ' \u4EBA\u5DF2\u5831' : '\u5C1A\u7121\u4EBA\u5831\u540D'}</span>
-      \${i > 0 ? \`<span class="edit" data-edit="\${i}" title="\u6539\u65E5\u671F">\u270E</span>\` : ''}</button>\`;
+      <span class="edit" data-edit="\${i}" title="\u6539\u65E5\u671F">\u270E</span></button>\`;
   }).join('');
 
   /* \u5834\u5730\u865F\u540C\u6B65\uFF08\u5718\u9577\u8A2D\u5B9A\uFF09 */
@@ -774,13 +774,17 @@ document.getElementById('tabDatePick').addEventListener('change', async e => {
   const date = e.target.value;
   if (!date || editSlot == null) return;
   try{
-    absorb(await api('settab', {slot: editSlot, date}));
+    absorb(await api('settab', {slot: editSlot + 1, date}));
     online = true;
     selIdx = editSlot; computeSessions();
     pendingName = null; signups = []; history = [];
-    toast(\`\u52A0\u958B\u5834\u6B21\u6539\u70BA \${date.slice(5).replace('-','/')}\`);
+    toast(\`\u5834\u6B21\u65E5\u671F\u6539\u70BA \${date.slice(5).replace('-','/')}\`);
     render(); pull();
-  }catch(err){ online = false; toast('\u9023\u7DDA\u5931\u6557\uFF0C\u8ACB\u518D\u8A66\u4E00\u6B21'); render(); }
+  }catch(err){
+    const msg = String(err.message || err);
+    toast(msg.includes('\u5DF2\u5728\u5176\u4ED6\u9801\u7C64') ? '\u9019\u500B\u65E5\u671F\u5DF2\u7D93\u6709\u9801\u7C64\u4E86' : msg.includes('\u904E\u53BB\u7684\u65E5\u671F') ? '\u4E0D\u80FD\u9078\u904E\u53BB\u7684\u65E5\u671F' : '\u9023\u7DDA\u5931\u6557\uFF0C\u8ACB\u518D\u8A66\u4E00\u6B21');
+    render();
+  }
   editSlot = null;
 });
 
@@ -875,6 +879,46 @@ function kvOf(env) {
 }
 __name(kvOf, "kvOf");
 var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+var TPE = 8 * 3600 * 1e3;
+var sessionOver = /* @__PURE__ */ __name((ds) => Date.now() > Date.parse(ds + "T18:00:00+08:00"), "sessionOver");
+var plusDays = /* @__PURE__ */ __name((ds, n) => {
+  const d = /* @__PURE__ */ new Date(ds + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}, "plusDays");
+function nextSat() {
+  const d = new Date(Date.now() + TPE);
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() + (6 - d.getUTCDay() + 7) % 7);
+  let s = d.toISOString().slice(0, 10);
+  while (sessionOver(s)) s = plusDays(s, 7);
+  return s;
+}
+__name(nextSat, "nextSat");
+async function readTabs(kv) {
+  let t = await kv.get("tabs", "json");
+  let changed = false;
+  if (!Array.isArray(t) || t.length !== 3 || !t.every((x) => typeof x === "string" && DATE_RE.test(x))) {
+    const base = nextSat();
+    const old = Array.isArray(t) ? t : [];
+    t = [
+      base,
+      old[0] && DATE_RE.test(old[0]) && !sessionOver(old[0]) ? old[0] : plusDays(base, 7),
+      old[1] && DATE_RE.test(old[1]) && !sessionOver(old[1]) ? old[1] : plusDays(base, 14)
+    ];
+    changed = true;
+  }
+  while (sessionOver(t[0])) {
+    t.shift();
+    let cand = nextSat();
+    while (t.includes(cand)) cand = plusDays(cand, 7);
+    t.push(cand);
+    changed = true;
+  }
+  if (changed) await kv.put("tabs", JSON.stringify(t));
+  return t;
+}
+__name(readTabs, "readTabs");
 var norm = /* @__PURE__ */ __name((x) => ({ id: x.id || crypto.randomUUID(), name: x.name || x.n || "", at: x.at || 0, pos: x.pos | 0 }), "norm");
 function backfillPos(list) {
   const taken = new Set(list.filter((x) => x.pos >= 1).map((x) => x.pos));
@@ -918,14 +962,9 @@ async function buildState(kv, date, withHist) {
     readSignups(kv, date),
     readRoster(kv),
     kv.get("c:" + date),
-    kv.get("tabs", "json")
+    readTabs(kv)
   ]);
-  const out = {
-    signups,
-    roster,
-    court: Math.min(Math.max(parseInt(court) || 1, 1), 6),
-    tabs: Array.isArray(tabs) ? tabs : [null, null]
-  };
+  const out = { signups, roster, court: Math.min(Math.max(parseInt(court) || 1, 1), 6), tabs };
   if (withHist) {
     out.history = [];
     const base = /* @__PURE__ */ new Date(date + "T00:00:00Z");
@@ -978,9 +1017,11 @@ var worker_default = {
       }
       if (p === "settab") {
         const slot = parseInt(b.slot), date = String(b.date || "");
-        if (!(slot === 1 || slot === 2) || date && !DATE_RE.test(date)) return J({ error: "bad request" }, 400);
-        const tabs = await kv.get("tabs", "json") || [null, null];
-        tabs[slot - 1] = date || null;
+        if (!(slot >= 1 && slot <= 3) || !DATE_RE.test(date)) return J({ error: "bad request" }, 400);
+        if (sessionOver(date)) return J({ error: "\u4E0D\u80FD\u9078\u5DF2\u7D93\u904E\u53BB\u7684\u65E5\u671F" }, 400);
+        const tabs = await readTabs(kv);
+        if (tabs.includes(date) && tabs[slot - 1] !== date) return J({ error: "\u9019\u500B\u65E5\u671F\u5DF2\u5728\u5176\u4ED6\u9801\u7C64" }, 400);
+        tabs[slot - 1] = date;
         await kv.put("tabs", JSON.stringify(tabs));
         return J({ tabs });
       }
@@ -1070,7 +1111,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-ht5twO/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-rRRFSd/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -1102,7 +1143,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-ht5twO/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-rRRFSd/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

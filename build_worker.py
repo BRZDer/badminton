@@ -70,6 +70,39 @@ function kvOf(env) {
 }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/* === 三頁日期輪轉（台北時區）：場次日 18:00 過後視為結束 === */
+const TPE = 8 * 3600 * 1000;
+const sessionOver = ds => Date.now() > Date.parse(ds + 'T18:00:00+08:00');
+const plusDays = (ds, n) => { const d = new Date(ds + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+function nextSat() {
+  const d = new Date(Date.now() + TPE);
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() + ((6 - d.getUTCDay() + 7) % 7));
+  let s = d.toISOString().slice(0, 10);
+  while (sessionOver(s)) s = plusDays(s, 7);
+  return s;
+}
+async function readTabs(kv) {
+  let t = await kv.get('tabs', 'json');
+  let changed = false;
+  if (!Array.isArray(t) || t.length !== 3 || !t.every(x => typeof x === 'string' && DATE_RE.test(x))) {
+    const base = nextSat();
+    const old = Array.isArray(t) ? t : [];   // 舊格式 [自訂2, 自訂3] 遷移
+    t = [base,
+         old[0] && DATE_RE.test(old[0]) && !sessionOver(old[0]) ? old[0] : plusDays(base, 7),
+         old[1] && DATE_RE.test(old[1]) && !sessionOver(old[1]) ? old[1] : plusDays(base, 14)];
+    changed = true;
+  }
+  while (sessionOver(t[0])) {   // 第一頁過期 → 前推，尾頁補最近未來週六（避開重複）
+    t.shift();
+    let cand = nextSat();
+    while (t.includes(cand)) cand = plusDays(cand, 7);
+    t.push(cand);
+    changed = true;
+  }
+  if (changed) await kv.put('tabs', JSON.stringify(t));
+  return t;
+}
 const norm = x => ({ id: x.id || crypto.randomUUID(), name: x.name || x.n || '', at: x.at || 0, pos: x.pos | 0 });
 // 舊資料沒有 pos → 依序補上最前面的空位
 function backfillPos(list) {
@@ -105,10 +138,9 @@ async function readRoster(kv) {
 }
 async function buildState(kv, date, withHist) {
   const [signups, roster, court, tabs] = await Promise.all([
-    readSignups(kv, date), readRoster(kv), kv.get('c:' + date), kv.get('tabs', 'json'),
+    readSignups(kv, date), readRoster(kv), kv.get('c:' + date), readTabs(kv),
   ]);
-  const out = { signups, roster, court: Math.min(Math.max(parseInt(court) || 1, 1), 6),
-    tabs: Array.isArray(tabs) ? tabs : [null, null] };
+  const out = { signups, roster, court: Math.min(Math.max(parseInt(court) || 1, 1), 6), tabs };
   if (withHist) {
     out.history = [];
     const base = new Date(date + 'T00:00:00Z');
@@ -158,11 +190,13 @@ export default {
         }
         return J(await buildState(kv, date, true));
       }
-      if (p === 'settab') {   // 自訂第 2/3 頁籤日期（全隊共享）
+      if (p === 'settab') {   // 三頁日期皆可自訂（全隊共享）
         const slot = parseInt(b.slot), date = String(b.date || '');
-        if (!(slot === 1 || slot === 2) || (date && !DATE_RE.test(date))) return J({ error: 'bad request' }, 400);
-        const tabs = (await kv.get('tabs', 'json')) || [null, null];
-        tabs[slot - 1] = date || null;
+        if (!(slot >= 1 && slot <= 3) || !DATE_RE.test(date)) return J({ error: 'bad request' }, 400);
+        if (sessionOver(date)) return J({ error: '不能選已經過去的日期' }, 400);
+        const tabs = await readTabs(kv);
+        if (tabs.includes(date) && tabs[slot - 1] !== date) return J({ error: '這個日期已在其他頁籤' }, 400);
+        tabs[slot - 1] = date;
         await kv.put('tabs', JSON.stringify(tabs));
         return J({ tabs });
       }

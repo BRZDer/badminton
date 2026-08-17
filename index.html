@@ -433,20 +433,19 @@ const dkeyOf = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate()
 const mdOf = d => `${pad(d.getMonth()+1)}.${pad(d.getDate())}`;
 /* 三個場次：第 1 頁固定最近的週六；第 2、3 頁可由團隊自訂日期（存 KV 全隊同步），
    沒自訂時預設下週六／下下週六 */
-let customTabs = [null, null];   // 對應頁籤 2、3 的自訂日期字串
+let serverTabs = null;   // 伺服器輪轉後的三個場次日期（字串），未取得前用預設
 let SATS = [], WEEK_KEYS = [];
 let selIdx = 0, DKEY = '';
 function computeSessions(){
-  const base = sessionSaturday();
-  SATS = [0, 1, 2].map(i => { const d = new Date(base); d.setDate(d.getDate() + 7 * i); return d; });
-  [1, 2].forEach(j => {
-    const c = customTabs[j-1];
-    if (c && /^\d{4}-\d{2}-\d{2}$/.test(c)){
-      const [y, m, dd] = c.split('-').map(Number);
-      SATS[j] = new Date(y, m - 1, dd);
-    }
-  });
-  WEEK_KEYS = SATS.map(dkeyOf);
+  let keys;
+  if (Array.isArray(serverTabs) && serverTabs.length === 3){
+    keys = serverTabs;
+  } else {
+    const base = sessionSaturday();
+    keys = [0, 1, 2].map(i => { const d = new Date(base); d.setDate(d.getDate() + 7 * i); return dkeyOf(d); });
+  }
+  WEEK_KEYS = keys;
+  SATS = keys.map(k => { const [y, m, dd] = k.split('-').map(Number); return new Date(y, m - 1, dd); });
   DKEY = WEEK_KEYS[selIdx];
 }
 computeSessions();
@@ -483,7 +482,7 @@ let online = true;
 /* DEMO 沙盒模式（?demo=1）：全部在本頁記憶體模擬，不碰正式資料庫 */
 const DEMO = new URLSearchParams(location.search).has('demo');
 const demoStore = {
-  tabs:[null,null],
+  tabs:null,
   roster:['Miller','女神','米革力','木每女臣'],
   history:[{date:'2026-08-09',names:['米革力','女神','Miller']}],
   weeks:{}
@@ -513,6 +512,7 @@ function demoApi(path, body){
   if (path === 'addname' && !demoStore.roster.includes(body.name)) demoStore.roster.push(body.name);
   if (path === 'delname') demoStore.roster = demoStore.roster.filter(x => x !== body.name);
   if (path === 'setcourt') w.court = body.court;
+  if (!demoStore.tabs) demoStore.tabs = [...WEEK_KEYS];
   if (path === 'settab') demoStore.tabs[body.slot - 1] = body.date;
   const counts = {};
   WEEK_KEYS.forEach(k => { counts[k] = demoWeek(k).signups.length; });
@@ -533,8 +533,8 @@ function absorb(s){
   if (Array.isArray(s.roster)) roster = s.roster;
   if (Array.isArray(s.history)) history = s.history;
   if (s.court >= 1) courtNo = s.court;
-  if (Array.isArray(s.tabs)){
-    customTabs = [s.tabs[0] || null, s.tabs[1] || null];
+  if (Array.isArray(s.tabs) && s.tabs.length === 3){
+    serverTabs = s.tabs;
     computeSessions();
   }
   if (s.counts) weekCounts = s.counts;
@@ -575,11 +575,11 @@ function render(){
     `${['SUN','MON','TUE','WED','THU','FRI','SAT'][selDate.getDay()]}／週${'日一二三四五六'[selDate.getDay()]}`;
   document.getElementById('weekTabs').innerHTML = WEEK_KEYS.map((k, i) => {
     const c = weekCounts[k];
-    const label = i === 0 ? '本週' : customTabs[i-1] ? '加開' : (i === 1 ? '下週' : '下下週');
+    const label = `週${'日一二三四五六'[SATS[i].getDay()]}`;
     return `<button class="week-tab${i === selIdx ? ' on' : ''}" data-idx="${i}">
       ${label}<span class="d">${mdOf(SATS[i])}</span>
       <span class="c">${c > 0 ? c + ' 人已報' : '尚無人報名'}</span>
-      ${i > 0 ? `<span class="edit" data-edit="${i}" title="改日期">✎</span>` : ''}</button>`;
+      <span class="edit" data-edit="${i}" title="改日期">✎</span></button>`;
   }).join('');
 
   /* 場地號同步（團長設定） */
@@ -768,13 +768,17 @@ document.getElementById('tabDatePick').addEventListener('change', async e => {
   const date = e.target.value;
   if (!date || editSlot == null) return;
   try{
-    absorb(await api('settab', {slot: editSlot, date}));
+    absorb(await api('settab', {slot: editSlot + 1, date}));
     online = true;
     selIdx = editSlot; computeSessions();
     pendingName = null; signups = []; history = [];
-    toast(`加開場次改為 ${date.slice(5).replace('-','/')}`);
+    toast(`場次日期改為 ${date.slice(5).replace('-','/')}`);
     render(); pull();
-  }catch(err){ online = false; toast('連線失敗，請再試一次'); render(); }
+  }catch(err){
+    const msg = String(err.message || err);
+    toast(msg.includes('已在其他頁籤') ? '這個日期已經有頁籤了' : msg.includes('過去的日期') ? '不能選過去的日期' : '連線失敗，請再試一次');
+    render();
+  }
   editSlot = null;
 });
 
