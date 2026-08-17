@@ -100,6 +100,12 @@ h1 .accent{color:var(--lime)}
 .week-tab .c{font-size:11px}
 .week-tab.on{background:var(--lime);border-color:var(--lime);color:var(--court)}
 .week-tab.on .d,.week-tab.on .c{color:var(--court)}
+.week-tab{position:relative}
+.week-tab .edit{
+  position:absolute;top:4px;right:6px;font-size:11px;opacity:.55;line-height:1;
+  padding:3px;cursor:pointer;
+}
+.week-tab.on .edit{opacity:.8}
 
 /* === \u7403\u5834\uFF08SVG \u756B\u7DDA + \u540D\u5B57\u4E0A\u5834\uFF09 === */
 .court-sec{margin-top:22px;position:relative}
@@ -167,6 +173,10 @@ h1 .accent{color:var(--lime)}
   animation:pop .35s cubic-bezier(.2,.9,.3,1.4);
 }
 .slot.filled:active{transform:translateY(2px)}
+/* \u591A\u884C\u62C6\u5B57\u540D\u724C\uFF1A\u884C\u6578\u8D8A\u591A\u5B57\u8D8A\u5C0F\uFF0C\u76F4\u6392\u5408\u9AD4 */
+.slot.filled.multi{font-size:12.5px;line-height:1.18;letter-spacing:.1em}
+.slot.filled.multi.tall{font-size:10.5px;line-height:1.1}
+.slot.filled .stack{display:block;text-align:center}
 .slot.filled .num{
   font-family:var(--font-num);font-size:11px;color:var(--court-mat);
   position:absolute;top:3px;left:7px;font-weight:400;
@@ -305,7 +315,7 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
     <div class="date-block rise" style="animation-delay:.2s">
       <div class="date-num" id="dateNum">--.--</div>
       <div class="date-meta">
-        <div class="weekday">SAT\uFF0F\u9031\u516D</div>
+        <div class="weekday" id="weekdayTxt">SAT\uFF0F\u9031\u516D</div>
         <div class="time">16:00\u201318:00</div>
       </div>
     </div>
@@ -315,6 +325,7 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
       <span class="countdown" id="countdown"></span>
     </div>
     <div class="week-tabs rise" style="animation-delay:.34s" id="weekTabs"></div>
+    <input type="date" id="tabDatePick" style="position:fixed;left:-9999px;top:0;opacity:0">
   </header>
 
   <div class="offline" id="offlineBox">\u26A0\uFE0F \u9023\u7DDA\u4E0D\u5230\u5831\u540D\u8CC7\u6599\u5EAB\uFF0C\u986F\u793A\u7684\u662F\u5FEB\u53D6\u540D\u55AE\u3002\u8ACB\u6AA2\u67E5\u7DB2\u8DEF\u5F8C\u91CD\u65B0\u6574\u7406\u3002</div>
@@ -376,10 +387,10 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
     <summary>\u627E\u4E0D\u5230\u540D\u5B57\uFF1F\u65B0\u589E\u968A\u54E1</summary>
     <div class="fold-body">
       <div class="add-row">
-        <input id="newName" maxlength="12" placeholder="\u8F38\u5165\u540D\u5B57\uFF08\u540C LINE \u7FA4\u66B1\u7A31\uFF09">
+        <input id="newName" maxlength="14" placeholder="\u8F38\u5165\u540D\u5B57\uFF08\u7A7A\u683C\uFF1D\u63DB\u884C\u76F4\u6392\uFF09">
         <button class="btn-add" id="addBtn">\u52A0\u5165</button>
       </div>
-      <div class="hint">\u52A0\u5165\u5F8C\u6240\u6709\u4EBA\u7684\u4E0B\u62C9\u9078\u55AE\u90FD\u6703\u51FA\u73FE\u9019\u500B\u540D\u5B57\uFF0C\u53EA\u9700\u8981\u52A0\u4E00\u6B21\u3002</div>
+      <div class="hint">\u52A0\u5165\u5F8C\u6240\u6709\u4EBA\u7684\u9078\u55AE\u90FD\u6703\u51FA\u73FE\u9019\u500B\u540D\u5B57\uFF0C\u53EA\u9700\u8981\u52A0\u4E00\u6B21\u3002\u62C6\u5B57\u540D\u53EF\u7528\u7A7A\u683C\u5206\u884C\u76F4\u6392\uFF0C\u4F8B\uFF1A\u300C\u8279\u8279 \u4E00\u4E00 \u7F8B\u7F8B\u300D\u6703\u6392\u6210\u4E09\u884C\uFF1D\u83EF\u83EF\u3002</div>
     </div>
   </details>
 
@@ -424,17 +435,27 @@ function sessionSaturday(now = new Date()){
   return d;
 }
 const pad = n => String(n).padStart(2, '0');
-/* \u4E09\u9031\u5834\u6B21\uFF1A\u672C\u9031\uFF08\u4F9D\u4E0A\u9762\u898F\u5247\u6EFE\u52D5\uFF09\uFF0B\u9694\u4E00\u9031\uFF0B\u9694\u5169\u9031 */
-const SATS = [0, 1, 2].map(i => {
-  const d = sessionSaturday();
-  d.setDate(d.getDate() + 7 * i);
-  return d;
-});
 const dkeyOf = d => \`\${d.getFullYear()}-\${pad(d.getMonth()+1)}-\${pad(d.getDate())}\`;
 const mdOf = d => \`\${pad(d.getMonth()+1)}.\${pad(d.getDate())}\`;
-const WEEK_KEYS = SATS.map(dkeyOf);
-let selIdx = 0;
-let DKEY = WEEK_KEYS[0];
+/* \u4E09\u500B\u5834\u6B21\uFF1A\u7B2C 1 \u9801\u56FA\u5B9A\u6700\u8FD1\u7684\u9031\u516D\uFF1B\u7B2C 2\u30013 \u9801\u53EF\u7531\u5718\u968A\u81EA\u8A02\u65E5\u671F\uFF08\u5B58 KV \u5168\u968A\u540C\u6B65\uFF09\uFF0C
+   \u6C92\u81EA\u8A02\u6642\u9810\u8A2D\u4E0B\u9031\u516D\uFF0F\u4E0B\u4E0B\u9031\u516D */
+let customTabs = [null, null];   // \u5C0D\u61C9\u9801\u7C64 2\u30013 \u7684\u81EA\u8A02\u65E5\u671F\u5B57\u4E32
+let SATS = [], WEEK_KEYS = [];
+let selIdx = 0, DKEY = '';
+function computeSessions(){
+  const base = sessionSaturday();
+  SATS = [0, 1, 2].map(i => { const d = new Date(base); d.setDate(d.getDate() + 7 * i); return d; });
+  [1, 2].forEach(j => {
+    const c = customTabs[j-1];
+    if (c && /^\\d{4}-\\d{2}-\\d{2}$/.test(c)){
+      const [y, m, dd] = c.split('-').map(Number);
+      SATS[j] = new Date(y, m - 1, dd);
+    }
+  });
+  WEEK_KEYS = SATS.map(dkeyOf);
+  DKEY = WEEK_KEYS[selIdx];
+}
+computeSessions();
 let weekCounts = {};   // {dkey: \u5831\u540D\u4EBA\u6578} \u7D66\u9801\u7C64\u7528
 
 function sessTimes(){
@@ -468,6 +489,7 @@ let online = true;
 /* DEMO \u6C99\u76D2\u6A21\u5F0F\uFF08?demo=1\uFF09\uFF1A\u5168\u90E8\u5728\u672C\u9801\u8A18\u61B6\u9AD4\u6A21\u64EC\uFF0C\u4E0D\u78B0\u6B63\u5F0F\u8CC7\u6599\u5EAB */
 const DEMO = new URLSearchParams(location.search).has('demo');
 const demoStore = {
+  tabs:[null,null],
   roster:['Miller','\u5973\u795E','\u7C73\u9769\u529B','\u6728\u6BCF\u5973\u81E3'],
   history:[{date:'2026-08-09',names:['\u7C73\u9769\u529B','\u5973\u795E','Miller']}],
   weeks:{}
@@ -497,10 +519,11 @@ function demoApi(path, body){
   if (path === 'addname' && !demoStore.roster.includes(body.name)) demoStore.roster.push(body.name);
   if (path === 'delname') demoStore.roster = demoStore.roster.filter(x => x !== body.name);
   if (path === 'setcourt') w.court = body.court;
+  if (path === 'settab') demoStore.tabs[body.slot - 1] = body.date;
   const counts = {};
   WEEK_KEYS.forEach(k => { counts[k] = demoWeek(k).signups.length; });
   return Promise.resolve(JSON.parse(JSON.stringify(
-    {signups:w.signups, court:w.court, roster:demoStore.roster, history:demoStore.history, counts})));
+    {signups:w.signups, court:w.court, roster:demoStore.roster, history:demoStore.history, counts, tabs:demoStore.tabs})));
 }
 async function api(path, body){
   if (DEMO) return demoApi(path, body);
@@ -516,6 +539,10 @@ function absorb(s){
   if (Array.isArray(s.roster)) roster = s.roster;
   if (Array.isArray(s.history)) history = s.history;
   if (s.court >= 1) courtNo = s.court;
+  if (Array.isArray(s.tabs)){
+    customTabs = [s.tabs[0] || null, s.tabs[1] || null];
+    computeSessions();
+  }
   if (s.counts) weekCounts = s.counts;
   else if (Array.isArray(s.signups)) weekCounts[DKEY] = s.signups.length;
   if (DEMO) return;
@@ -536,22 +563,29 @@ async function pull(){
 /* ================= \u756B\u9762 ================= */
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+/* \u540D\u5B57\u88E1\u7684\u7A7A\u683C\uFF1D\u63DB\u884C\uFF1A\u62C6\u5B57\u53EF\u4EE5\u76F4\u6392\uFF08\u4F8B\uFF1A\u300C\u8279\u8279 \u4E00\u4E00 \u7F8B\u7F8B\u300D\u4E09\u884C\u76F4\u8B80\uFF1D\u83EF\u83EF\uFF09 */
 function chipHTML(p){
-  return \`<div class="slot filled" data-id="\${esc(p.id)}" data-name="\${esc(p.name)}" title="\u9EDE\u4E00\u4E0B\u53D6\u6D88\u5831\u540D">
-    <span class="num">\${p.pos}</span>\${esc(p.name)}</div>\`;
+  const parts = String(p.name).split(' ').filter(Boolean);
+  const multi = parts.length > 1 ? \` multi\${parts.length > 2 ? ' tall' : ''}\` : '';
+  return \`<div class="slot filled\${multi}" data-id="\${esc(p.id)}" data-name="\${esc(p.name)}" title="\u9EDE\u4E00\u4E0B\u53D6\u6D88\u5831\u540D">
+    <span class="num">\${p.pos}</span><span class="stack">\${parts.map(esc).join('<br>')}</span></div>\`;
 }
 function render(){
   const st = refreshStatus();
   document.getElementById('offlineBox').style.display = online ? 'none' : 'block';
 
-  /* \u5834\u6B21\u65E5\u671F\u8207\u4E09\u9031\u9801\u7C64 */
-  document.getElementById('dateNum').textContent = mdOf(SATS[selIdx]);
-  const labels = ['\u672C\u9031', '\u4E0B\u9031', '\u4E0B\u4E0B\u9031'];
+  /* \u5834\u6B21\u65E5\u671F\u8207\u4E09\u9031\u9801\u7C64\uFF08\u7B2C 2\u30013 \u9801\u53EF\u81EA\u8A02\u65E5\u671F\uFF0C\u53F3\u4E0A\u89D2 \u270E\uFF09 */
+  const selDate = SATS[selIdx];
+  document.getElementById('dateNum').textContent = mdOf(selDate);
+  document.getElementById('weekdayTxt').textContent =
+    \`\${['SUN','MON','TUE','WED','THU','FRI','SAT'][selDate.getDay()]}\uFF0F\u9031\${'\u65E5\u4E00\u4E8C\u4E09\u56DB\u4E94\u516D'[selDate.getDay()]}\`;
   document.getElementById('weekTabs').innerHTML = WEEK_KEYS.map((k, i) => {
     const c = weekCounts[k];
+    const label = i === 0 ? '\u672C\u9031' : customTabs[i-1] ? '\u52A0\u958B' : (i === 1 ? '\u4E0B\u9031' : '\u4E0B\u4E0B\u9031');
     return \`<button class="week-tab\${i === selIdx ? ' on' : ''}" data-idx="\${i}">
-      \${labels[i]}<span class="d">\${mdOf(SATS[i])}</span>
-      <span class="c">\${c > 0 ? c + ' \u4EBA\u5DF2\u5831' : '\u5C1A\u7121\u4EBA\u5831\u540D'}</span></button>\`;
+      \${label}<span class="d">\${mdOf(SATS[i])}</span>
+      <span class="c">\${c > 0 ? c + ' \u4EBA\u5DF2\u5831' : '\u5C1A\u7121\u4EBA\u5831\u540D'}</span>
+      \${i > 0 ? \`<span class="edit" data-edit="\${i}" title="\u6539\u65E5\u671F">\u270E</span>\` : ''}</button>\`;
   }).join('');
 
   /* \u5834\u5730\u865F\u540C\u6B65\uFF08\u5718\u9577\u8A2D\u5B9A\uFF09 */
@@ -715,8 +749,19 @@ document.body.addEventListener('click', async e => {
   render();
 });
 
-/* \u5207\u63DB\u9031\u6B21 */
+/* \u5207\u63DB\u9031\u6B21\uFF0F\u81EA\u8A02\u65E5\u671F\uFF08\u270E \u958B\u65E5\u671F\u9078\u64C7\u5668\uFF0C\u6539\u5B8C\u5168\u968A\u540C\u6B65\uFF09 */
+let editSlot = null;
 document.getElementById('weekTabs').addEventListener('click', e => {
+  const pen = e.target.closest('[data-edit]');
+  if (pen){
+    e.stopPropagation();
+    editSlot = Number(pen.dataset.edit);
+    const picker = document.getElementById('tabDatePick');
+    picker.value = WEEK_KEYS[editSlot];
+    picker.min = dkeyOf(new Date());
+    if (picker.showPicker) picker.showPicker(); else picker.click();
+    return;
+  }
   const tab = e.target.closest('.week-tab');
   if (!tab) return;
   const i = Number(tab.dataset.idx);
@@ -724,6 +769,19 @@ document.getElementById('weekTabs').addEventListener('click', e => {
   selIdx = i; DKEY = WEEK_KEYS[i];
   pendingName = null; signups = []; history = [];
   render(); pull();
+});
+document.getElementById('tabDatePick').addEventListener('change', async e => {
+  const date = e.target.value;
+  if (!date || editSlot == null) return;
+  try{
+    absorb(await api('settab', {slot: editSlot, date}));
+    online = true;
+    selIdx = editSlot; computeSessions();
+    pendingName = null; signups = []; history = [];
+    toast(\`\u52A0\u958B\u5834\u6B21\u6539\u70BA \${date.slice(5).replace('-','/')}\`);
+    render(); pull();
+  }catch(err){ online = false; toast('\u9023\u7DDA\u5931\u6557\uFF0C\u8ACB\u518D\u8A66\u4E00\u6B21'); render(); }
+  editSlot = null;
 });
 
 /* \u5718\u9577\u6539\u5834\u5730\u865F\uFF081-6\uFF0C\u5168\u968A\u540C\u6B65\uFF09 */
@@ -740,9 +798,9 @@ document.getElementById('courtSel').addEventListener('change', async e => {
 /* \u65B0\u589E\u540D\u5B57\uFF08\u9032\u5171\u4EAB roster\uFF09 */
 async function addName(){
   const inp = document.getElementById('newName');
-  const name = inp.value.trim();
+  const name = inp.value.trim().replace(/\\s+/g, ' ');   // \u9023\u7E8C\u7A7A\u683C\u6536\u6582\u6210\u4E00\u500B\uFF08\u4E00\u500B\u7A7A\u683C\uFF1D\u4E00\u6B21\u63DB\u884C\uFF09
   if (!name) return;
-  if (name.length > 12) { toast('\u540D\u5B57\u592A\u9577\u4E86'); return; }
+  if (name.length > 14) { toast('\u540D\u5B57\u592A\u9577\u4E86'); return; }
   if (roster.includes(name)) { toast('\u540D\u55AE\u88E1\u5DF2\u7D93\u6709\u9019\u500B\u540D\u5B57'); inp.value = ''; render(); return; }
   try{
     absorb(await api('addname', {name, date: DKEY}));
@@ -856,12 +914,18 @@ async function readRoster(kv) {
 }
 __name(readRoster, "readRoster");
 async function buildState(kv, date, withHist) {
-  const [signups, roster, court] = await Promise.all([
+  const [signups, roster, court, tabs] = await Promise.all([
     readSignups(kv, date),
     readRoster(kv),
-    kv.get("c:" + date)
+    kv.get("c:" + date),
+    kv.get("tabs", "json")
   ]);
-  const out = { signups, roster, court: Math.min(Math.max(parseInt(court) || 1, 1), 6) };
+  const out = {
+    signups,
+    roster,
+    court: Math.min(Math.max(parseInt(court) || 1, 1), 6),
+    tabs: Array.isArray(tabs) ? tabs : [null, null]
+  };
   if (withHist) {
     out.history = [];
     const base = /* @__PURE__ */ new Date(date + "T00:00:00Z");
@@ -901,7 +965,7 @@ var worker_default = {
       if (req.method !== "POST") return J({ error: "POST required" }, 405);
       const b = await req.json();
       if (p === "signup") {
-        const date = String(b.date || ""), name = String(b.name || "").trim().slice(0, 20);
+        const date = String(b.date || ""), name = String(b.name || "").trim().replace(/\s+/g, " ").slice(0, 20);
         if (!DATE_RE.test(date) || !name) return J({ error: "bad request" }, 400);
         const wantPos = Number.isInteger(b.pos) && b.pos >= 1 && b.pos <= 48 ? b.pos : null;
         const s = await readSignups(kv, date);
@@ -911,6 +975,14 @@ var worker_default = {
           await kv.put("s:" + date, JSON.stringify(s));
         }
         return J(await buildState(kv, date, true));
+      }
+      if (p === "settab") {
+        const slot = parseInt(b.slot), date = String(b.date || "");
+        if (!(slot === 1 || slot === 2) || date && !DATE_RE.test(date)) return J({ error: "bad request" }, 400);
+        const tabs = await kv.get("tabs", "json") || [null, null];
+        tabs[slot - 1] = date || null;
+        await kv.put("tabs", JSON.stringify(tabs));
+        return J({ tabs });
       }
       if (p === "setcourt") {
         const date = String(b.date || ""), court = parseInt(b.court);
@@ -933,7 +1005,7 @@ var worker_default = {
         return J({ roster });
       }
       if (p === "addname") {
-        const name = String(b.name || "").trim().slice(0, 20);
+        const name = String(b.name || "").trim().replace(/\s+/g, " ").slice(0, 20);
         if (!name) return J({ error: "bad request" }, 400);
         const roster = await readRoster(kv);
         if (!roster.includes(name)) {
@@ -998,7 +1070,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-mOdLZW/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-ht5twO/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -1030,7 +1102,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-mOdLZW/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-ht5twO/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
