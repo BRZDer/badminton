@@ -27,6 +27,7 @@
   --font-display:"Chocolate Classical Sans","Noto Sans TC",sans-serif;
   --font-num:"Anton","Noto Sans TC",sans-serif;
   --font-body:"Noto Sans TC",sans-serif;
+  --wrap:520px;             /* 內容欄寬：底部票券浮島靠這個對齊球場卡 */
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
@@ -40,7 +41,7 @@ body{
   min-height:100dvh;
   padding-bottom:calc(96px + env(safe-area-inset-bottom));
 }
-.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 16px}
 
 /* === 進場動畫：整頁一次性 stagger === */
 @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
@@ -92,17 +93,21 @@ h1 .accent{color:var(--lime)}
 .pill.open{background:var(--lime);color:var(--court)}
 .pill.live{background:var(--coral);color:#fff}
 .pill.closed{background:rgba(239,233,216,.2);color:var(--ink)}
-.countdown{font-size:12px;color:var(--dim);letter-spacing:.05em}
+.countdown{font-size:13px;color:rgba(244,241,230,.78);letter-spacing:.04em}
 /* 三週切換頁籤 */
 .week-tabs{display:flex;gap:8px;margin-top:14px}
 .week-tab{
-  flex:1;border:1.5px solid rgba(239,233,216,.3);border-radius:11px;background:rgba(0,0,0,.2);
+  flex:1;border:1.5px solid rgba(239,233,216,.16);border-radius:11px;background:rgba(0,0,0,.22);
   color:var(--dim);font-family:var(--font-body);font-size:12px;padding:8px 4px;cursor:pointer;
   text-align:center;line-height:1.5;letter-spacing:.05em;
+  transition:border-color .2s, transform .15s;
 }
-.week-tab .d{font-family:var(--font-num);font-size:15px;letter-spacing:.06em;display:block;color:var(--ink)}
+.week-tab:hover{border-color:rgba(239,233,216,.34)}
+.week-tab .d{font-family:var(--font-num);font-size:15px;letter-spacing:.06em;display:block;color:var(--line)}
 .week-tab .c{font-size:11px}
-.week-tab.on{background:var(--lime);border-color:var(--lime);color:var(--court)}
+/* 選中頁籤沿用隊徽的印刷位移陰影，讓「可點的東西」有一致的實體感 */
+.week-tab.on{background:var(--lime);border-color:var(--lime);color:var(--court);
+  box-shadow:3px 3px 0 rgba(0,0,0,.32);transform:translateY(-1px)}
 .week-tab.on .d,.week-tab.on .c{color:var(--court)}
 .week-tab{position:relative}
 .week-tab .edit{
@@ -200,13 +205,22 @@ h1 .accent{color:var(--lime)}
 .court-card.ghost .court-svg,
 .court-card.ghost .court-label,
 .court-card.ghost .court-count,
-.court-card.ghost .slots{opacity:.34;filter:grayscale(.35) brightness(1.3)}
+.court-card.ghost .slots{opacity:.5;filter:saturate(.45)}
+/* 未解鎖時只露出球場的一角：八個空格佔掉整屏卻零資訊，收起來頁面才有節奏 */
+.court-card.ghost{max-height:186px}
+.court-card.ghost::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:110px;pointer-events:none;
+  background:linear-gradient(to bottom, transparent, rgba(12,53,42,.55) 45%, rgba(12,53,42,.94));
+  z-index:1;
+}
+.court-card.unlocked{max-height:none}
 .court-card.unlocked .court-svg,
 .court-card.unlocked .court-label,
 .court-card.unlocked .court-count,
 .court-card.unlocked .slots{opacity:1;filter:none}
 .unlock-overlay{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;
+  z-index:2; /* 蓋在上面那層淡出漸層之上 */
 }
 .unlock-box{
   background:rgba(12,53,42,.88);border:1px dashed rgba(239,233,216,.4);border-radius:13px;
@@ -240,6 +254,18 @@ h1 .accent{color:var(--lime)}
   background-size:26px 14px;background-repeat:repeat-x;
 }
 .ticket-inner{max-width:520px;margin:0 auto;display:flex;gap:10px}
+/* 桌機：滿版米白橫帶會把整頁攔腰切斷，收成與內容同寬的浮島票券 */
+@media (min-width:640px){
+  .ticket-bar{
+    left:50%;right:auto;transform:translateX(-50%);
+    width:min(calc(var(--wrap) - 32px), calc(100% - 32px));
+    bottom:20px;border-radius:16px;padding:14px;
+    box-shadow:0 22px 50px -14px rgba(0,0,0,.66), 0 0 0 1px rgba(12,53,42,.14);
+  }
+  .ticket-bar::before{display:none}
+  .ticket-inner{max-width:none}
+  body{padding-bottom:130px}
+}
 .name-dd{flex:1;position:relative;min-width:0}
 .name-select{
   width:100%;appearance:none;-webkit-appearance:none;text-align:left;cursor:pointer;
@@ -269,20 +295,31 @@ h1 .accent{color:var(--lime)}
   display:flex;align-items:center;justify-content:center;
 }
 .name-row .del:active{background:var(--coral);color:#fff}
+/* 主 CTA 用全頁最亮的螢光黃實心：這是整頁唯一要人按的東西，不能比場上的名牌還弱 */
 .btn-go{
   font-family:var(--font-display);font-size:18px;letter-spacing:.2em;
-  background:var(--court);color:var(--lime);border:none;border-radius:10px;
+  background:var(--lime);color:var(--court);border:none;border-radius:10px;
   padding:12px 20px 12px 23px;cursor:pointer;white-space:nowrap;
+  box-shadow:0 4px 0 rgba(12,53,42,.45);
+  transition:transform .12s, box-shadow .12s;
 }
-.btn-go:disabled{opacity:.45}
-.btn-go:active{transform:translateY(1px)}
+/* 未選名字時是「還沒輪到你」，不是把品牌色洗成一團灰 */
+.btn-go:disabled{
+  background:transparent;color:rgba(12,53,42,.42);
+  box-shadow:inset 0 0 0 2px rgba(12,53,42,.18);cursor:default;
+}
+.btn-go:not(:disabled):active{transform:translateY(4px);box-shadow:0 0 0 rgba(12,53,42,.45)}
 
 /* === 折疊區 === */
-.fold{margin-top:16px;border-radius:12px;background:rgba(239,233,216,.05);overflow:hidden}
+/* 圓角與細框跟球場卡對齊，不然這兩條會像事後補上去的 */
+.fold{margin-top:14px;border-radius:14px;background:rgba(239,233,216,.05);overflow:hidden;
+  box-shadow:inset 0 0 0 1px rgba(239,233,216,.09)}
 .fold summary{
-  list-style:none;cursor:pointer;padding:13px 16px;font-size:13px;letter-spacing:.15em;
-  color:var(--dim);display:flex;justify-content:space-between;align-items:center;user-select:none;
+  list-style:none;cursor:pointer;padding:14px 16px;font-size:13px;letter-spacing:.15em;
+  color:rgba(244,241,230,.72);display:flex;justify-content:space-between;align-items:center;user-select:none;
+  transition:color .2s,background .2s;
 }
+.fold summary:hover{color:var(--ink);background:rgba(239,233,216,.04)}
 .fold summary::-webkit-details-marker{display:none}
 .fold summary::after{content:"＋";font-size:15px;transition:transform .25s}
 .fold[open] summary::after{transform:rotate(45deg)}
@@ -312,7 +349,30 @@ h1 .accent{color:var(--lime)}
   margin-top:14px;border-radius:10px;padding:11px 14px;font-size:13px;line-height:1.6;
   background:rgba(255,106,77,.15);border:1px solid rgba(255,106,77,.5);color:#ffb3a3;display:none;
 }
-footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.5);letter-spacing:.2em;padding-bottom:8px}
+footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.78);letter-spacing:.2em;padding-bottom:8px}
+
+/* === 桌機：單欄海報立在球場上，不要變成「手機模擬器」 === */
+@media (min-width:900px){
+  body{
+    background:
+      linear-gradient(90deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,.12) 20%, transparent 34%,
+                             transparent 66%, rgba(0,0,0,.12) 80%, rgba(0,0,0,.5) 100%),
+      radial-gradient(1200px 600px at 50% -200px, #17553f 0%, transparent 60%),
+      radial-gradient(760px 900px at 50% 42%, rgba(27,106,78,.32) 0%, transparent 72%),
+      repeating-linear-gradient(0deg, transparent 0 46px, rgba(239,233,216,.035) 46px 48px),
+      var(--court);
+  }
+  :root{--wrap:560px}
+  .wrap{position:relative}
+  /* 兩側細線把中央欄框成一張立起來的海報 */
+  .wrap::before,.wrap::after{
+    content:"";position:absolute;top:12px;bottom:12px;width:1px;pointer-events:none;
+    background:linear-gradient(to bottom, transparent, rgba(239,233,216,.16) 12%,
+                               rgba(239,233,216,.16) 88%, transparent);
+  }
+  .wrap::before{left:0}
+  .wrap::after{right:0}
+}
 </style>
 </head>
 <body>
