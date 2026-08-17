@@ -201,19 +201,40 @@ h1 .accent{color:var(--lime)}
 .court-card.ghost .court-label,
 .court-card.ghost .court-count,
 .court-card.ghost .slots{opacity:.34;filter:grayscale(.35) brightness(1.3)}
+/* 未解鎖時只顯示上半場（網子就是切口）＋底部淡出：八格空位原本白佔一整屏。
+   ⚠️ 容器裁短了，但 .slots 必須維持原本 610:570 的完整高度，
+   名牌與場線的對位才不會跑掉——第 9~12 人報名時上半場那四格要看得一清二楚。 */
+.court-card.ghost{aspect-ratio:610/400}
+.court-card.ghost .slots{inset:0 0 auto 0;aspect-ratio:610/570}
+/* 已站上第二場的名牌不跟著壓暗，只淡化場線 */
+.court-card.ghost .court-svg,
+.court-card.ghost .court-label,
+.court-card.ghost .court-count{opacity:.55;filter:saturate(.5)}
+.court-card.ghost .slots{opacity:1;filter:none}
+.court-card.ghost::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:30%;pointer-events:none;z-index:1;
+  background:linear-gradient(to bottom, transparent, rgba(12,53,42,.25) 40%,
+                             rgba(12,53,42,.72) 70%, rgba(12,53,42,.95));
+}
+/* 解鎖後回到完整球場 */
+.court-card.unlocked{aspect-ratio:auto}
+.court-card.unlocked .slots{inset:0;aspect-ratio:auto}
 .court-card.unlocked .court-svg,
 .court-card.unlocked .court-label,
 .court-card.unlocked .court-count,
 .court-card.unlocked .slots{opacity:1;filter:none}
+/* 提示改成貼卡片底部的計分板橫條：置中會壓到第 9~12 格的名牌 */
 .unlock-overlay{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;
+  position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0;
+  z-index:2;
 }
 .unlock-box{
-  background:rgba(12,53,42,.88);border:1px dashed rgba(239,233,216,.4);border-radius:13px;
-  padding:15px 20px;text-align:center;font-size:13px;color:var(--ink);line-height:1.7;max-width:250px;
+  background:rgba(12,53,42,.9);border-top:1px dashed rgba(239,233,216,.35);
+  padding:8px 14px 10px;text-align:center;font-size:12.5px;color:var(--ink);line-height:1.5;
+  width:100%;white-space:nowrap;overflow:hidden;
 }
 .unlock-box b{color:var(--lime)}
-.bar{height:6px;border-radius:99px;background:rgba(239,233,216,.18);margin-top:9px;overflow:hidden}
+.bar{height:5px;border-radius:99px;background:rgba(239,233,216,.18);margin-top:7px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--lime);border-radius:99px;transition:width .5s ease}
 .captain-banner{
   margin-top:14px;border-radius:12px;padding:13px 16px;font-size:14px;line-height:1.65;
@@ -656,10 +677,11 @@ function render(){
   } else {
     overlay.style.display = 'flex';
     banner2.innerHTML = '';
+    /* 單行文案：提示條夾在球場切口下緣，兩行會把切口推得太低、也容易壓到第 9~12 格的名牌 */
     overlay.innerHTML = n <= CAP1
-      ? `<div class="unlock-box">🔒 報名滿 <b>${UNLOCK2} 人</b>自動解鎖第二場<br>揪人一起來！（目前 ${n} 人）
+      ? `<div class="unlock-box">🔒 滿 <b>${UNLOCK2} 人</b>解鎖第二場（目前 ${n} 人）
           <div class="bar"><i style="width:${Math.min(n/UNLOCK2*100,100)}%"></i></div></div>`
-      : `<div class="unlock-box">⏳ 第二場排隊中，再 <b>${UNLOCK2 - n} 人</b>就成立<br>（目前 ${n}／${UNLOCK2} 人）
+      : `<div class="unlock-box">⏳ 再 <b>${UNLOCK2 - n} 人</b>成立第二場（${n}／${UNLOCK2}）
           <div class="bar"><i style="width:${n/UNLOCK2*100}%"></i></div></div>`;
   }
 
