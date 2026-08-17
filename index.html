@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>淡水乳酸堆起｜週六羽球報名</title>
 <meta property="og:title" content="淡水乳酸堆起｜週六羽球報名">
-<meta property="og:description" content="每週六 16:00–18:00 淡水國民運動中心，點名字上場！">
+<meta property="og:description" content="淡水國民運動中心 羽球場，點名字上場！">
 <meta name="theme-color" content="#0c352a">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -74,7 +74,17 @@ h1 .accent{color:var(--lime)}
 /* 排版與原版完全相同，只用 translateY 平移整塊做底部切齊（校準值由像素量測而來） */
 .date-meta{padding-bottom:6px;transform:translateY(12px)}
 .date-meta .weekday{font-family:var(--font-display);font-size:20px;color:var(--lime);letter-spacing:.2em}
-.date-meta .time{font-family:var(--font-num);font-size:20px;letter-spacing:.05em;color:var(--ink)}
+.date-meta .time{font-family:var(--font-num);font-size:20px;letter-spacing:.05em;color:var(--ink);display:flex;align-items:baseline;gap:1px}
+.date-meta .time .dash{opacity:.85}
+/* 整點下拉：外觀等同原本文字，只有極淡底線暗示可改 */
+.hsel{
+  appearance:none;-webkit-appearance:none;border:none;background:transparent;cursor:pointer;
+  font-family:var(--font-num);font-size:20px;letter-spacing:.05em;color:var(--ink);
+  padding:0 1px 1px;margin:0;line-height:1;
+  border-bottom:1px dashed rgba(244,241,230,.35);
+}
+.hsel:focus{outline:none;border-bottom-color:var(--lime);color:var(--lime)}
+.hsel option{background:var(--court);color:var(--ink)}
 .venue{margin-top:10px;font-size:14px;color:var(--dim);letter-spacing:.08em}
 .venue b{color:var(--ink);font-weight:500}
 .status-row{display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap}
@@ -318,7 +328,9 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
       <div class="date-num" id="dateNum">--.--</div>
       <div class="date-meta">
         <div class="weekday" id="weekdayTxt">SAT／週六</div>
-        <div class="time">16:00–18:00</div>
+        <div class="time" id="timeRow">
+          <select id="startSel" class="hsel" title="開打時間"></select><span class="dash">–</span><select id="endSel" class="hsel" title="結束時間"></select>
+        </div>
       </div>
     </div>
     <div class="venue rise" style="animation-delay:.26s">📍 <b>淡水國民運動中心4F</b>　<span id="courtName">壹</span>号羽球場</div>
@@ -459,11 +471,12 @@ function computeSessions(){
 computeSessions();
 let weekCounts = {};   // {dkey: 報名人數} 給頁籤用
 
+let sessHours = [16, 18];   // [開打, 結束] 整點，每個場次各自存在伺服器
 function sessTimes(){
   const SAT = SATS[selIdx];
   const deadlineT = new Date(SAT); deadlineT.setHours(0,0,0,0);
-  const startT = new Date(SAT); startT.setHours(16,0,0,0);
-  const endT = new Date(SAT); endT.setHours(18,0,0,0);
+  const startT = new Date(SAT); startT.setHours(sessHours[0],0,0,0);
+  const endT = new Date(SAT); endT.setHours(sessHours[1],0,0,0);
   return {deadlineT, startT, endT};
 }
 function fmtLeft(ms){
@@ -520,12 +533,13 @@ function demoApi(path, body){
   if (path === 'addname' && !demoStore.roster.includes(body.name)) demoStore.roster.push(body.name);
   if (path === 'delname') demoStore.roster = demoStore.roster.filter(x => x !== body.name);
   if (path === 'setcourt') w.court = body.court;
+  if (path === 'settime') w.time = [body.start, body.end];
   if (!demoStore.tabs) demoStore.tabs = [...WEEK_KEYS];
   if (path === 'settab') demoStore.tabs[body.slot - 1] = body.date;
   const counts = {};
   WEEK_KEYS.forEach(k => { counts[k] = demoWeek(k).signups.length; });
   return Promise.resolve(JSON.parse(JSON.stringify(
-    {signups:w.signups, court:w.court, roster:demoStore.roster, history:demoStore.history, counts, tabs:demoStore.tabs})));
+    {signups:w.signups, court:w.court, time:w.time || [16,18], roster:demoStore.roster, history:demoStore.history, counts, tabs:demoStore.tabs})));
 }
 async function api(path, body){
   if (DEMO) return demoApi(path, body);
@@ -541,6 +555,7 @@ function absorb(s){
   if (Array.isArray(s.roster)) roster = s.roster;
   if (Array.isArray(s.history)) history = s.history;
   if (s.court >= 1) courtNo = s.court;
+  if (Array.isArray(s.time) && s.time.length === 2) sessHours = s.time;
   if (Array.isArray(s.tabs) && s.tabs.length === 3){
     serverTabs = s.tabs;
     computeSessions();
@@ -592,6 +607,17 @@ function render(){
       <span class="c">${c > 0 ? c + ' 人已報' : '尚無人報名'}</span>
       <span class="edit" title="改日期">✎<input type="date" class="tabdate" data-idx="${i}" value="${k}" min="${dkeyOf(new Date())}"></span></div>`;
   }).join('');
+
+  /* 時間下拉同步（整點，結束一定晚於開打） */
+  const hh = n => String(n).padStart(2, '0') + ':00';
+  const sSel = document.getElementById('startSel'), eSel = document.getElementById('endSel');
+  sSel.innerHTML = Array.from({length: 18}, (_, i) => i + 6)
+    .map(h => `<option value="${h}">${hh(h)}</option>`).join('');
+  eSel.innerHTML = Array.from({length: 24}, (_, i) => i + 1)
+    .filter(h => h > sessHours[0])
+    .map(h => `<option value="${h}">${hh(h % 24)}</option>`).join('');
+  sSel.value = String(sessHours[0]);
+  eSel.value = String(sessHours[1]);
 
   /* 場地號同步（團長設定） */
   document.getElementById('courtSel').value = String(courtNo);
@@ -784,6 +810,21 @@ document.getElementById('weekTabs').addEventListener('change', async e => {
     render();
   }
 });
+
+/* 改時間（整點，全隊同步）；結束時間若不晚於開打會自動修正為 +2 小時 */
+async function saveTime(start, end){
+  if (end <= start) end = Math.min(24, start + 2);
+  try{
+    absorb(await api('settime', {date: DKEY, start, end}));
+    online = true;
+    toast(`時間改為 ${String(start).padStart(2,'0')}:00–${String(end % 24).padStart(2,'0')}:00`);
+  }catch(err){ online = false; toast('連線失敗，請再試一次'); }
+  render();
+}
+document.getElementById('startSel').addEventListener('change', e =>
+  saveTime(Number(e.target.value), sessHours[1]));
+document.getElementById('endSel').addEventListener('change', e =>
+  saveTime(sessHours[0], Number(e.target.value)));
 
 /* 團長改場地號（1-6，全隊同步） */
 document.getElementById('courtSel').addEventListener('change', async e => {

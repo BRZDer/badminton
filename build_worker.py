@@ -72,30 +72,38 @@ function kvOf(env) {
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 /* === 三頁日期輪轉（台北時區）：場次日 18:00 過後視為結束 === */
 const TPE = 8 * 3600 * 1000;
-const sessionOver = ds => Date.now() > Date.parse(ds + 'T18:00:00+08:00');
 const plusDays = (ds, n) => { const d = new Date(ds + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
-function nextSat() {
+// 該場次的結束時刻（讀該日自訂時間，預設 18:00；24 點＝隔天 00:00）
+async function endMs(kv, ds) {
+  const t = await kv.get('t:' + ds, 'json');
+  const end = Array.isArray(t) && Number.isInteger(t[1]) && t[1] > 0 && t[1] <= 24 ? t[1] : 18;
+  return end >= 24
+    ? Date.parse(plusDays(ds, 1) + 'T00:00:00+08:00')
+    : Date.parse(ds + 'T' + String(end).padStart(2, '0') + ':00:00+08:00');
+}
+const sessionOver = async (kv, ds) => Date.now() > await endMs(kv, ds);
+async function nextSat(kv) {
   const d = new Date(Date.now() + TPE);
   d.setUTCHours(0, 0, 0, 0);
   d.setUTCDate(d.getUTCDate() + ((6 - d.getUTCDay() + 7) % 7));
   let s = d.toISOString().slice(0, 10);
-  while (sessionOver(s)) s = plusDays(s, 7);
+  while (await sessionOver(kv, s)) s = plusDays(s, 7);
   return s;
 }
 async function readTabs(kv) {
   let t = await kv.get('tabs', 'json');
   let changed = false;
   if (!Array.isArray(t) || t.length !== 3 || !t.every(x => typeof x === 'string' && DATE_RE.test(x))) {
-    const base = nextSat();
+    const base = await nextSat(kv);
     const old = Array.isArray(t) ? t : [];   // 舊格式 [自訂2, 自訂3] 遷移
-    t = [base,
-         old[0] && DATE_RE.test(old[0]) && !sessionOver(old[0]) ? old[0] : plusDays(base, 7),
-         old[1] && DATE_RE.test(old[1]) && !sessionOver(old[1]) ? old[1] : plusDays(base, 14)];
+    const keep = [];
+    for (const o of old) keep.push(o && DATE_RE.test(o) && !(await sessionOver(kv, o)) ? o : null);
+    t = [base, keep[0] || plusDays(base, 7), keep[1] || plusDays(base, 14)];
     changed = true;
   }
-  while (sessionOver(t[0])) {   // 第一頁過期 → 前推，尾頁補最近未來週六（避開重複）
+  while (await sessionOver(kv, t[0])) {   // 第一頁過期 → 前推，尾頁補最近未來週六（避開重複）
     t.shift();
-    let cand = nextSat();
+    let cand = await nextSat(kv);
     while (t.includes(cand)) cand = plusDays(cand, 7);
     t.push(cand);
     changed = true;
@@ -140,10 +148,13 @@ async function readRoster(kv) {
   return v;
 }
 async function buildState(kv, date, withHist) {
-  const [signups, roster, court, tabs] = await Promise.all([
-    readSignups(kv, date), readRoster(kv), kv.get('c:' + date), readTabs(kv),
+  const [signups, roster, court, tabs, time] = await Promise.all([
+    readSignups(kv, date), readRoster(kv), kv.get('c:' + date), readTabs(kv), kv.get('t:' + date, 'json'),
   ]);
-  const out = { signups, roster, court: Math.min(Math.max(parseInt(court) || 1, 1), 6), tabs };
+  const okTime = Array.isArray(time) && time.length === 2
+    && Number.isInteger(time[0]) && Number.isInteger(time[1]) && time[1] > time[0];
+  const out = { signups, roster, court: Math.min(Math.max(parseInt(court) || 1, 1), 6), tabs,
+    time: okTime ? time : [16, 18] };
   if (withHist) {
     out.history = [];
     const base = new Date(date + 'T00:00:00Z');
@@ -196,12 +207,20 @@ export default {
       if (p === 'settab') {   // 三頁日期皆可自訂（全隊共享）
         const slot = parseInt(b.slot), date = String(b.date || '');
         if (!(slot >= 1 && slot <= 3) || !DATE_RE.test(date)) return J({ error: 'bad request' }, 400);
-        if (sessionOver(date)) return J({ error: '不能選已經過去的日期' }, 400);
+        if (await sessionOver(kv, date)) return J({ error: '不能選已經過去的日期' }, 400);
         const tabs = await readTabs(kv);
         if (tabs.includes(date) && tabs[slot - 1] !== date) return J({ error: '這個日期已在其他頁籤' }, 400);
         tabs[slot - 1] = date;
         await kv.put('tabs', JSON.stringify(tabs));
         return J({ tabs });
+      }
+      if (p === 'settime') {   // 每場次開打／結束時間（整點，全隊共享）
+        const date = String(b.date || ''), start = parseInt(b.start), end = parseInt(b.end);
+        if (!DATE_RE.test(date)) return J({ error: 'bad request' }, 400);
+        if (!(start >= 0 && start <= 23 && end >= 1 && end <= 24 && end > start))
+          return J({ error: '時間範圍不合法' }, 400);
+        await kv.put('t:' + date, JSON.stringify([start, end]));
+        return J(await buildState(kv, date, false));
       }
       if (p === 'setcourt') {
         const date = String(b.date || ''), court = parseInt(b.court);
