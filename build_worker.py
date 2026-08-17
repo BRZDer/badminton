@@ -104,10 +104,11 @@ async function readRoster(kv) {
   return v;
 }
 async function buildState(kv, date, withHist) {
-  const [signups, roster, court] = await Promise.all([
-    readSignups(kv, date), readRoster(kv), kv.get('c:' + date),
+  const [signups, roster, court, tabs] = await Promise.all([
+    readSignups(kv, date), readRoster(kv), kv.get('c:' + date), kv.get('tabs', 'json'),
   ]);
-  const out = { signups, roster, court: Math.min(Math.max(parseInt(court) || 1, 1), 6) };
+  const out = { signups, roster, court: Math.min(Math.max(parseInt(court) || 1, 1), 6),
+    tabs: Array.isArray(tabs) ? tabs : [null, null] };
   if (withHist) {
     out.history = [];
     const base = new Date(date + 'T00:00:00Z');
@@ -146,7 +147,7 @@ export default {
       if (req.method !== 'POST') return J({ error: 'POST required' }, 405);
       const b = await req.json();
       if (p === 'signup') {
-        const date = String(b.date || ''), name = String(b.name || '').trim().slice(0, 20);
+        const date = String(b.date || ''), name = String(b.name || '').trim().replace(/\s+/g, ' ').slice(0, 20);
         if (!DATE_RE.test(date) || !name) return J({ error: 'bad request' }, 400);
         const wantPos = Number.isInteger(b.pos) && b.pos >= 1 && b.pos <= 48 ? b.pos : null;
         const s = await readSignups(kv, date);
@@ -156,6 +157,14 @@ export default {
           await kv.put('s:' + date, JSON.stringify(s));
         }
         return J(await buildState(kv, date, true));
+      }
+      if (p === 'settab') {   // 自訂第 2/3 頁籤日期（全隊共享）
+        const slot = parseInt(b.slot), date = String(b.date || '');
+        if (!(slot === 1 || slot === 2) || (date && !DATE_RE.test(date))) return J({ error: 'bad request' }, 400);
+        const tabs = (await kv.get('tabs', 'json')) || [null, null];
+        tabs[slot - 1] = date || null;
+        await kv.put('tabs', JSON.stringify(tabs));
+        return J({ tabs });
       }
       if (p === 'setcourt') {
         const date = String(b.date || ''), court = parseInt(b.court);
@@ -178,7 +187,7 @@ export default {
         return J({ roster });
       }
       if (p === 'addname') {
-        const name = String(b.name || '').trim().slice(0, 20);
+        const name = String(b.name || '').trim().replace(/\s+/g, ' ').slice(0, 20);
         if (!name) return J({ error: 'bad request' }, 400);
         const roster = await readRoster(kv);
         if (!roster.includes(name)) {
