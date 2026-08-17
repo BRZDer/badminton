@@ -573,7 +573,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 
 /* \u540D\u5B57\u88E1\u7684\u7A7A\u683C\uFF1D\u63DB\u884C\uFF1A\u62C6\u5B57\u53EF\u4EE5\u76F4\u6392\uFF08\u4F8B\uFF1A\u300C\u8279\u8279 \u4E00\u4E00 \u7F8B\u7F8B\u300D\u4E09\u884C\u76F4\u8B80\uFF1D\u83EF\u83EF\uFF09 */
 function chipHTML(p){
-  const parts = String(p.name).split(' ').filter(Boolean);
+  const parts = String(p.name).split('\\n').filter(Boolean);   // \u53EA\u6709 Enter \u63DB\u884C\u624D\u5206\u884C\uFF0C\u7A7A\u683C\u4E0D\u5206\u884C
   const multi = parts.length > 1 ? \` multi\${parts.length > 2 ? ' tall' : ''}\` : '';
   /* \u55AE\u6BB5\u9577\u540D\u4E0D\u63DB\u884C\u3001\u6309\u5B57\u6578\u7E2E\u5B57\uFF0896px \u986F\u793A\u9810\u7B97\uFF0C\u6700\u5C0F 8px\uFF09 */
   const fs = parts.length === 1 && p.name.length > 6
@@ -661,11 +661,12 @@ function render(){
   } else {
     if (pendingName && !avail.includes(pendingName)) pendingName = null;
     btn.disabled = false;
-    btn.textContent = pendingName || (avail.length ? '\u9078\u4F60\u7684\u540D\u5B57' : '\u5168\u54E1\u90FD\u4E0A\u5834\u4E86 \u{1F4AA}');
+    btn.textContent = (pendingName || '').replace(/\\n/g, ' ') || (avail.length ? '\u9078\u4F60\u7684\u540D\u5B57' : '\u5168\u54E1\u90FD\u4E0A\u5834\u4E86 \u{1F4AA}');
     go.disabled = !avail.length;
+    const shown = x => esc(x).replace(/\\n/g, ' <span style="opacity:.35">/</span> ');
     list.innerHTML = roster.map(x => signed.has(x)
-      ? \`<div class="name-row signed"><span class="nm">\u2714 \${esc(x)}\uFF08\u5DF2\u4E0A\u5834\uFF09</span></div>\`
-      : \`<div class="name-row" data-name="\${esc(x)}"><span class="nm">\${esc(x)}</span>
+      ? \`<div class="name-row signed"><span class="nm">\u2714 \${shown(x)}\uFF08\u5DF2\u4E0A\u5834\uFF09</span></div>\`
+      : \`<div class="name-row" data-name="\${esc(x)}"><span class="nm">\${shown(x)}</span>
           <button class="del" data-del="\${esc(x)}" title="\u5F9E\u540D\u55AE\u79FB\u9664">\u2715</button></div>\`).join('')
       || \`<div class="name-row signed"><span class="nm">\u540D\u55AE\u662F\u7A7A\u7684\uFF0C\u5148\u53BB\u300C\u65B0\u589E\u968A\u54E1\u300D</span></div>\`;
   }
@@ -804,7 +805,7 @@ document.getElementById('courtSel').addEventListener('change', async e => {
 /* \u65B0\u589E\u540D\u5B57\uFF08\u9032\u5171\u4EAB roster\uFF09 */
 async function addName(){
   const inp = document.getElementById('newName');
-  const name = inp.value.split(/[\\n\\s]+/).filter(Boolean).slice(0, 3).join(' ');   // Enter/\u7A7A\u683C\uFF1D\u5206\u6BB5\u76F4\u6392\uFF0C\u6700\u591A\u4E09\u6BB5
+  const name = inp.value.split('\\n').map(x => x.replace(/\\s+/g, ' ').trim()).filter(Boolean).slice(0, 3).join('\\n');   // \u53EA\u6709 Enter \u5206\u884C\uFF08\u6700\u591A\u4E09\u884C\uFF09\uFF0C\u7A7A\u683C\u4FDD\u7559\u5728\u540C\u4E00\u884C
   if (!name) return;
   if (name.length > 14) { toast('\u540D\u5B57\u592A\u9577\u4E86'); return; }
   if (roster.includes(name)) { toast('\u540D\u55AE\u88E1\u5DF2\u7D93\u6709\u9019\u500B\u540D\u5B57'); inp.value = ''; inp.rows = 1; render(); return; }
@@ -926,6 +927,7 @@ async function readTabs(kv) {
 }
 __name(readTabs, "readTabs");
 var norm = /* @__PURE__ */ __name((x) => ({ id: x.id || crypto.randomUUID(), name: x.name || x.n || "", at: x.at || 0, pos: x.pos | 0 }), "norm");
+var normName = /* @__PURE__ */ __name((v) => String(v || "").split("\n").map((l) => l.replace(/[^\S\n]+/g, " ").trim()).filter(Boolean).slice(0, 3).join("\n").slice(0, 20), "normName");
 function backfillPos(list) {
   const taken = new Set(list.filter((x) => x.pos >= 1).map((x) => x.pos));
   for (const x of list) {
@@ -1010,7 +1012,7 @@ var worker_default = {
       if (req.method !== "POST") return J({ error: "POST required" }, 405);
       const b = await req.json();
       if (p === "signup") {
-        const date = String(b.date || ""), name = String(b.name || "").trim().replace(/\s+/g, " ").slice(0, 20);
+        const date = String(b.date || ""), name = normName(b.name);
         if (!DATE_RE.test(date) || !name) return J({ error: "bad request" }, 400);
         const wantPos = Number.isInteger(b.pos) && b.pos >= 1 && b.pos <= 48 ? b.pos : null;
         const s = await readSignups(kv, date);
@@ -1052,7 +1054,7 @@ var worker_default = {
         return J({ roster });
       }
       if (p === "addname") {
-        const name = String(b.name || "").trim().replace(/\s+/g, " ").slice(0, 20);
+        const name = normName(b.name);
         if (!name) return J({ error: "bad request" }, 400);
         const roster = await readRoster(kv);
         if (!roster.includes(name)) {
@@ -1117,7 +1119,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-WdSSTj/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-xxDuYY/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -1149,7 +1151,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-WdSSTj/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-xxDuYY/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

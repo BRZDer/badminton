@@ -104,6 +104,9 @@ async function readTabs(kv) {
   return t;
 }
 const norm = x => ({ id: x.id || crypto.randomUUID(), name: x.name || x.n || '', at: x.at || 0, pos: x.pos | 0 });
+// 名字正規化：保留使用者自己按 Enter 的換行（最多三行），其餘空白收斂為單一空格
+const normName = v => String(v || '').split('\n').map(l => l.replace(/[^\S\n]+/g, ' ').trim())
+  .filter(Boolean).slice(0, 3).join('\n').slice(0, 20);
 // 舊資料沒有 pos → 依序補上最前面的空位
 function backfillPos(list) {
   const taken = new Set(list.filter(x => x.pos >= 1).map(x => x.pos));
@@ -179,7 +182,7 @@ export default {
       if (req.method !== 'POST') return J({ error: 'POST required' }, 405);
       const b = await req.json();
       if (p === 'signup') {
-        const date = String(b.date || ''), name = String(b.name || '').trim().replace(/\s+/g, ' ').slice(0, 20);
+        const date = String(b.date || ''), name = normName(b.name);
         if (!DATE_RE.test(date) || !name) return J({ error: 'bad request' }, 400);
         const wantPos = Number.isInteger(b.pos) && b.pos >= 1 && b.pos <= 48 ? b.pos : null;
         const s = await readSignups(kv, date);
@@ -221,7 +224,7 @@ export default {
         return J({ roster });
       }
       if (p === 'addname') {
-        const name = String(b.name || '').trim().replace(/\s+/g, ' ').slice(0, 20);
+        const name = normName(b.name);
         if (!name) return J({ error: 'bad request' }, 400);
         const roster = await readRoster(kv);
         if (!roster.includes(name)) {

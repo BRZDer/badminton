@@ -567,7 +567,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 
 /* 名字裡的空格＝換行：拆字可以直排（例：「艹艹 一一 羋羋」三行直讀＝華華） */
 function chipHTML(p){
-  const parts = String(p.name).split(' ').filter(Boolean);
+  const parts = String(p.name).split('\n').filter(Boolean);   // 只有 Enter 換行才分行，空格不分行
   const multi = parts.length > 1 ? ` multi${parts.length > 2 ? ' tall' : ''}` : '';
   /* 單段長名不換行、按字數縮字（96px 顯示預算，最小 8px） */
   const fs = parts.length === 1 && p.name.length > 6
@@ -655,11 +655,12 @@ function render(){
   } else {
     if (pendingName && !avail.includes(pendingName)) pendingName = null;
     btn.disabled = false;
-    btn.textContent = pendingName || (avail.length ? '選你的名字' : '全員都上場了 💪');
+    btn.textContent = (pendingName || '').replace(/\n/g, ' ') || (avail.length ? '選你的名字' : '全員都上場了 💪');
     go.disabled = !avail.length;
+    const shown = x => esc(x).replace(/\n/g, ' <span style="opacity:.35">/</span> ');
     list.innerHTML = roster.map(x => signed.has(x)
-      ? `<div class="name-row signed"><span class="nm">✔ ${esc(x)}（已上場）</span></div>`
-      : `<div class="name-row" data-name="${esc(x)}"><span class="nm">${esc(x)}</span>
+      ? `<div class="name-row signed"><span class="nm">✔ ${shown(x)}（已上場）</span></div>`
+      : `<div class="name-row" data-name="${esc(x)}"><span class="nm">${shown(x)}</span>
           <button class="del" data-del="${esc(x)}" title="從名單移除">✕</button></div>`).join('')
       || `<div class="name-row signed"><span class="nm">名單是空的，先去「新增隊員」</span></div>`;
   }
@@ -798,7 +799,7 @@ document.getElementById('courtSel').addEventListener('change', async e => {
 /* 新增名字（進共享 roster） */
 async function addName(){
   const inp = document.getElementById('newName');
-  const name = inp.value.split(/[\n\s]+/).filter(Boolean).slice(0, 3).join(' ');   // Enter/空格＝分段直排，最多三段
+  const name = inp.value.split('\n').map(x => x.replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 3).join('\n');   // 只有 Enter 分行（最多三行），空格保留在同一行
   if (!name) return;
   if (name.length > 14) { toast('名字太長了'); return; }
   if (roster.includes(name)) { toast('名單裡已經有這個名字'); inp.value = ''; inp.rows = 1; render(); return; }
