@@ -27,6 +27,7 @@
   --font-display:"Chocolate Classical Sans","Noto Sans TC",sans-serif;
   --font-num:"Anton","Noto Sans TC",sans-serif;
   --font-body:"Noto Sans TC",sans-serif;
+  --wrap:520px;             /* 內容欄寬：底部票券浮島靠這個對齊球場卡 */
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
@@ -40,7 +41,7 @@ body{
   min-height:100dvh;
   padding-bottom:calc(96px + env(safe-area-inset-bottom));
 }
-.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 16px}
 
 /* === 進場動畫：整頁一次性 stagger === */
 @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
@@ -261,7 +262,19 @@ h1 .accent{color:var(--lime)}
   background:radial-gradient(circle at 8px 7px, var(--court) 5px, transparent 5.5px);
   background-size:26px 14px;background-repeat:repeat-x;
 }
-.ticket-inner{max-width:520px;margin:0 auto;display:flex;gap:10px}
+.ticket-inner{max-width:calc(var(--wrap) - 32px);margin:0 auto;display:flex;gap:10px}
+/* 桌機：滿版米白橫帶會把畫面攔腰切斷，收成與球場卡同寬的浮島票券 */
+@media (min-width:640px){
+  .ticket-bar{
+    left:50%;right:auto;transform:translateX(-50%);
+    width:min(calc(var(--wrap) - 32px), calc(100% - 32px));
+    bottom:20px;border-radius:16px;padding:14px;
+    box-shadow:0 22px 50px -14px rgba(0,0,0,.66), 0 0 0 1px rgba(12,53,42,.14);
+  }
+  .ticket-bar::before{display:none}   /* 浮島有圓角，撕票孔排到兩側會打架 */
+  .ticket-inner{max-width:none}
+  body{padding-bottom:130px}
+}
 .name-dd{flex:1;position:relative;min-width:0}
 .name-select{
   width:100%;appearance:none;-webkit-appearance:none;text-align:left;cursor:pointer;
@@ -291,13 +304,20 @@ h1 .accent{color:var(--lime)}
   display:flex;align-items:center;justify-content:center;
 }
 .name-row .del:active{background:var(--coral);color:#fff}
+/* 主 CTA 用全頁最亮的螢光黃實心：這是唯一要人按的東西，不能比場上的名牌還弱 */
 .btn-go{
   font-family:var(--font-display);font-size:18px;letter-spacing:.2em;
-  background:var(--court);color:var(--lime);border:none;border-radius:10px;
+  background:var(--lime);color:var(--court);border:none;border-radius:10px;
   padding:12px 20px 12px 23px;cursor:pointer;white-space:nowrap;
+  box-shadow:0 4px 0 rgba(12,53,42,.45);
+  transition:transform .12s, box-shadow .12s;
 }
-.btn-go:disabled{opacity:.45}
-.btn-go:active{transform:translateY(1px)}
+/* 還沒選名字＝「還沒輪到你」，不是把品牌色洗成一團灰 */
+.btn-go:disabled{
+  background:transparent;color:rgba(12,53,42,.42);
+  box-shadow:inset 0 0 0 2px rgba(12,53,42,.18);cursor:default;
+}
+.btn-go:not(:disabled):active{transform:translateY(4px);box-shadow:0 0 0 rgba(12,53,42,.45)}
 
 /* === 折疊區 === */
 .fold{margin-top:16px;border-radius:12px;background:rgba(239,233,216,.05);overflow:hidden}
