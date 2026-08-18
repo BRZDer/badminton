@@ -122,7 +122,7 @@ h1 .accent{color:var(--lime)}
   background:linear-gradient(160deg,var(--court-mat-2),var(--court-mat) 55%);
   box-shadow:0 18px 44px -18px rgba(0,0,0,.6), inset 0 0 0 1px rgba(239,233,216,.08);
 }
-.court-svg{display:block;width:100%;height:auto}
+.court-svg{display:block;width:100%;height:auto;aspect-ratio:610/570;flex:none}
 .court-svg line,.court-svg rect{stroke:var(--line);stroke-width:4;fill:none;opacity:.9}
 .court-svg .net{stroke-dasharray:14 10;stroke-width:5;opacity:.55}
 /* 場線繪製動畫：pathLength 統一為 100，任何長度的線都能畫滿 */
@@ -212,6 +212,9 @@ h1 .accent{color:var(--lime)}
   mask-image:linear-gradient(to bottom,#000 70%,rgba(0,0,0,.45) 88%,transparent 100%);
 }
 .court-card.ghost .slots{inset:0 0 auto 0;aspect-ratio:610/570}
+/* Safari 會把 height:auto 的 SVG 拉去填滿有 aspect-ratio 的父層 → 球場被壓扁、
+   名牌與場線對不上。改成絕對定位，SVG 只認自己的 610:570，卡片負責裁切。 */
+.court-card.ghost .court-svg{position:absolute;top:0;left:0;width:100%}
 /* 已站上第二場的名牌不跟著壓暗，只淡化場線 */
 .court-card.ghost .court-svg,
 .court-card.ghost .court-label,
@@ -219,6 +222,7 @@ h1 .accent{color:var(--lime)}
 .court-card.ghost .slots{opacity:1;filter:none}
 /* 解鎖後回到完整球場 */
 .court-card.unlocked{aspect-ratio:auto;-webkit-mask-image:none;mask-image:none}
+.court-card.unlocked .court-svg{position:static}
 .court-card.unlocked .slots{inset:0;aspect-ratio:auto}
 .court-card.unlocked .court-svg,
 .court-card.unlocked .court-label,
