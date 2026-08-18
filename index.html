@@ -205,11 +205,11 @@ h1 .accent{color:var(--lime)}
    ⚠️ 容器裁短了，但 .slots 必須維持原本 610:570 的完整高度，
    名牌與場線的對位才不會跑掉——第 9~12 人報名時上半場那四格要看得一清二楚。 */
 .court-card.ghost{
-  aspect-ratio:610/430;
+  aspect-ratio:610/380;   /* 上半場兩排名牌到 y=306，之後留 74 給淡出 */
   /* 真的淡出成透明（原本是蓋一層深色假裝，所以看起來不夠明顯）。
      70% 之後開始化掉，到卡片底緣剛好全透明，鎖那行字就接在這裡。 */
-  -webkit-mask-image:linear-gradient(to bottom,#000 70%,rgba(0,0,0,.45) 88%,transparent 100%);
-  mask-image:linear-gradient(to bottom,#000 70%,rgba(0,0,0,.45) 88%,transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom,#000 80%,rgba(0,0,0,.45) 92%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 80%,rgba(0,0,0,.45) 92%,transparent 100%);
 }
 .court-card.ghost .slots{inset:0 0 auto 0;aspect-ratio:610/570}
 /* Safari 會把 height:auto 的 SVG 拉去填滿有 aspect-ratio 的父層 → 球場被壓扁、
@@ -655,8 +655,8 @@ function render(){
   const picking = pendingName && st === 'open';
   const unlocked = n >= UNLOCK2;
 
-  const slotsHTML = (startPos, clickable) =>
-    Array.from({length: 8}, (_, i) => {
+  const slotsHTML = (startPos, clickable, count = 8) =>
+    Array.from({length: count}, (_, i) => {
       const pos = startPos + i;
       return byPos[pos] ? chipHTML(byPos[pos])
         : `<div class="slot empty${clickable && picking ? ' pick' : ''}"${clickable ? ` data-pos="${pos}"` : ''}>NO.${pos}</div>`;
@@ -671,7 +671,8 @@ function render(){
   const overlay = document.getElementById('unlockOverlay');
   const banner2 = document.getElementById('banner2');
   const n2 = signups.filter(p => p.pos > CAP1 && p.pos <= CAP_TOTAL).length;
-  document.getElementById('slots2').innerHTML = slotsHTML(CAP1 + 1, unlocked);
+  /* 未解鎖只顯示半場：4 格（NO.9~12），格子大小與位置和全場完全相同 */
+  document.getElementById('slots2').innerHTML = slotsHTML(CAP1 + 1, unlocked, unlocked ? 8 : 4);
   document.getElementById('count2').innerHTML = `${n2}<small> / 8</small>`;
   card2.className = 'court-card ' + (unlocked ? 'unlocked' : 'ghost');
   if (unlocked){
