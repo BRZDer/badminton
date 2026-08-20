@@ -41,12 +41,26 @@ seed_signups = {
         }
     ]
 }
-seed_roster = ["米革力", "木每女臣", "女神", "亻｜㣊金名", "阝可氵原"]
+# 季繳成員：2026-10-01 之前的場次自動預設報名（\n＝名牌換行）
+season_members = [
+    "米革力",
+    "木每女臣",
+    "女礻申",
+    "亻｜㣊 金名",
+    "阝可章彡",
+    "艹艹\n一一\n羋羋",
+    "禾口王章",
+    "艹艹\n止方"
+]
+season_until = "2026-10-01"
+seed_roster = season_members
 
 worker = r'''// 淡水乳酸堆起 週六羽球報名 — Cloudflare Worker（UI + API + KV）
 // 由 build_worker.py 產生，勿直接編輯；改 index.html 後重跑 python3 build_worker.py
 const SEED_SIGNUPS = __SEED_SIGNUPS__;
 const SEED_ROSTER = __SEED_ROSTER__;
+const SEASON_MEMBERS = __SEASON_MEMBERS__;
+const SEASON_UNTIL = __SEASON_UNTIL__;
 const HTML = __HTML__;
 
 const CORS = {
@@ -131,11 +145,20 @@ function lowestFree(list) {
   return p;
 }
 
+const todayTPE = () => new Date(Date.now() + TPE).toISOString().slice(0, 10);
 async function readSignups(kv, date) {
   let v = await kv.get('s:' + date, 'json');
-  if (v === null && SEED_SIGNUPS[date]) {
-    v = SEED_SIGNUPS[date];
-    await kv.put('s:' + date, JSON.stringify(v));
+  if (v === null) {
+    if (SEED_SIGNUPS[date]) {
+      v = SEED_SIGNUPS[date];
+      await kv.put('s:' + date, JSON.stringify(v));
+    } else if (date < SEASON_UNTIL && date >= todayTPE()
+               && new Date(date + 'T00:00:00Z').getUTCDay() === 6) {
+      // 季繳成員預設報名：限 10/01 前的「週六」場次（加開的平日／週日不套用）；
+      // 只在「該場次尚無任何紀錄」時寫入，之後誰要退報就退得掉，也不會竄改過去場次的歷史
+      v = SEASON_MEMBERS.map((name, i) => ({ id: crypto.randomUUID(), name, at: Date.now(), pos: i + 1 }));
+      await kv.put('s:' + date, JSON.stringify(v));
+    }
   }
   return Array.isArray(v) ? backfillPos(v.map(norm)) : [];
 }
@@ -264,6 +287,8 @@ export default {
 
 worker = worker.replace('__SEED_SIGNUPS__', json.dumps(seed_signups, ensure_ascii=False))
 worker = worker.replace('__SEED_ROSTER__', json.dumps(seed_roster, ensure_ascii=False))
+worker = worker.replace('__SEASON_MEMBERS__', json.dumps(season_members, ensure_ascii=False))
+worker = worker.replace('__SEASON_UNTIL__', json.dumps(season_until, ensure_ascii=False))
 worker = worker.replace('__HTML__', json.dumps(html, ensure_ascii=False))
 (ROOT / 'worker.js').write_text(worker)
 print(f'worker.js generated: {len(worker)} bytes')
