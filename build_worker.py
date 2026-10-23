@@ -104,9 +104,14 @@ async function nextSat(kv) {
   while (await sessionOver(kv, s)) s = plusDays(s, 7);
   return s;
 }
+async function readPin(kv) {
+  const p = await kv.get('tabs_pin', 'json');
+  return Array.isArray(p) && p.length === 3 ? p.map(Boolean) : [false, false, false];
+}
 async function readTabs(kv) {
   let t = await kv.get('tabs', 'json');
-  let changed = false;
+  let pin = await readPin(kv);
+  let changed = false, pinChanged = false;
   if (!Array.isArray(t) || t.length !== 3 || !t.every(x => typeof x === 'string' && DATE_RE.test(x))) {
     const base = await nextSat(kv);
     const old = Array.isArray(t) ? t : [];   // 舊格式 [自訂2, 自訂3] 遷移
@@ -115,14 +120,16 @@ async function readTabs(kv) {
     t = [base, keep[0] || plusDays(base, 7), keep[1] || plusDays(base, 14)];
     changed = true;
   }
-  while (await sessionOver(kv, t[0])) {   // 第一頁過期 → 前推，尾頁補最近未來週六（避開重複）
-    t.shift();
+  // 第一頁過期 → 前推，尾頁補最近未來週六（避開重複）；被釘住的頁不動
+  while (!pin[0] && await sessionOver(kv, t[0])) {
+    t.shift(); pin.shift();
     let cand = await nextSat(kv);
     while (t.includes(cand)) cand = plusDays(cand, 7);
-    t.push(cand);
-    changed = true;
+    t.push(cand); pin.push(false);
+    changed = true; pinChanged = true;
   }
   if (changed) await kv.put('tabs', JSON.stringify(t));
+  if (pinChanged) await kv.put('tabs_pin', JSON.stringify(pin));
   return t;
 }
 const norm = x => ({ id: x.id || crypto.randomUUID(), name: x.name || x.n || '', at: x.at || 0, pos: x.pos | 0 });
@@ -230,11 +237,15 @@ export default {
       if (p === 'settab') {   // 三頁日期皆可自訂（全隊共享）
         const slot = parseInt(b.slot), date = String(b.date || '');
         if (!(slot >= 1 && slot <= 3) || !DATE_RE.test(date)) return J({ error: 'bad request' }, 400);
-        if (await sessionOver(kv, date)) return J({ error: '不能選已經過去的日期' }, 400);
         const tabs = await readTabs(kv);
         if (tabs.includes(date) && tabs[slot - 1] !== date) return J({ error: '這個日期已在其他頁籤' }, 400);
         tabs[slot - 1] = date;
+        // 手動選到「已結束」的日期＝刻意回看／補登，釘住該頁不讓自動輪轉推掉；
+        // 選未來日期則不釘，過了那天照常自動往前推
+        const pin = await readPin(kv);
+        pin[slot - 1] = await sessionOver(kv, date);
         await kv.put('tabs', JSON.stringify(tabs));
+        await kv.put('tabs_pin', JSON.stringify(pin));
         return J({ tabs });
       }
       if (p === 'settime') {   // 每場次開打／結束時間（整點，全隊共享）

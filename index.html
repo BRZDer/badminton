@@ -652,7 +652,7 @@ function render(){
     return `<div class="week-tab${i === selIdx ? ' on' : ''}" data-idx="${i}" role="button">
       ${label}<span class="d">${mdOf(SATS[i])}</span>
       <span class="c">${c > 0 ? c + ' 人已報' : '尚無人報名'}</span>
-      <span class="edit" title="改日期">✎<input type="date" class="tabdate" data-idx="${i}" value="${k}" min="${dkeyOf(new Date())}"></span></div>`;
+      <span class="edit" title="改日期">✎<input type="date" class="tabdate" data-idx="${i}" value="${k}"></span></div>`;
   }).join('');
 
   /* 時間下拉同步（整點，結束一定晚於開打） */
