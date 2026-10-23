@@ -88,6 +88,15 @@ h1 .accent{color:var(--lime)}
 .hsel option{background:var(--court);color:var(--ink)}
 .venue{margin-top:10px;font-size:14px;color:var(--dim);letter-spacing:.08em}
 .venue b{color:var(--ink);font-weight:500}
+/* 樓層下拉：外觀等同原本文字 */
+.fsel{
+  appearance:none;-webkit-appearance:none;border:none;background:transparent;cursor:pointer;
+  font-family:var(--font-body);font-size:14px;font-weight:500;color:var(--ink);
+  letter-spacing:.08em;padding:0 1px 1px;margin:0;line-height:1;
+  border-bottom:1px dashed rgba(244,241,230,.35);
+}
+.fsel:focus{outline:none;border-bottom-color:var(--lime);color:var(--lime)}
+.fsel option{background:var(--court);color:var(--ink)}
 .status-row{display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap}
 .pill{font-size:12px;padding:5px 12px;border-radius:99px;letter-spacing:.15em;font-weight:700}
 .pill.open{background:var(--lime);color:var(--court)}
@@ -375,7 +384,7 @@ footer{margin-top:30px;text-align:center;font-size:11px;color:rgba(157,184,171,.
         </div>
       </div>
     </div>
-    <div class="venue rise" style="animation-delay:.26s">📍 <b>淡水國民運動中心4F</b>　<span id="courtName">壹</span>号羽球場</div>
+    <div class="venue rise" style="animation-delay:.26s">📍 <b>淡水國民運動中心<select id="floorSel" class="fsel" title="場地在幾樓"><option value="3">3F</option><option value="4">4F</option></select></b>　<span id="courtName">壹</span>号羽球場</div>
     <div class="status-row rise" style="animation-delay:.3s">
       <span class="pill open" id="statusPill">報名中</span>
       <span class="countdown" id="countdown"></span>
@@ -544,6 +553,7 @@ let roster = ['Miller'];
 let signups = [];   // [{id,name,at,pos}] id 由伺服器發，pos=場上位置(1-8 第一場)
 let history = [];   // [{date,names:[]}]
 let courtNo = 1;    // 團長訂到的場地號（1-6，全隊共享）
+let floorNo = 4;    // 場地樓層（3 或 4，全隊共享）
 let pendingName = null;  // 已選好、待點位置的名字
 let online = true;
 
@@ -580,13 +590,14 @@ function demoApi(path, body){
   if (path === 'addname' && !demoStore.roster.includes(body.name)) demoStore.roster.push(body.name);
   if (path === 'delname') demoStore.roster = demoStore.roster.filter(x => x !== body.name);
   if (path === 'setcourt') w.court = body.court;
+  if (path === 'setfloor') w.floor = body.floor;
   if (path === 'settime') w.time = [body.start, body.end];
   if (!demoStore.tabs) demoStore.tabs = [...WEEK_KEYS];
   if (path === 'settab') demoStore.tabs[body.slot - 1] = body.date;
   const counts = {};
   WEEK_KEYS.forEach(k => { counts[k] = demoWeek(k).signups.length; });
   return Promise.resolve(JSON.parse(JSON.stringify(
-    {signups:w.signups, court:w.court, time:w.time || [16,18], roster:demoStore.roster, history:demoStore.history, counts, tabs:demoStore.tabs})));
+    {signups:w.signups, court:w.court, floor:w.floor || 4, time:w.time || [16,18], roster:demoStore.roster, history:demoStore.history, counts, tabs:demoStore.tabs})));
 }
 async function api(path, body){
   if (DEMO) return demoApi(path, body);
@@ -602,6 +613,7 @@ function absorb(s){
   if (Array.isArray(s.roster)) roster = s.roster;
   if (Array.isArray(s.history)) history = s.history;
   if (s.court >= 1) courtNo = s.court;
+  if (s.floor === 3 || s.floor === 4) floorNo = s.floor;
   if (Array.isArray(s.time) && s.time.length === 2) sessHours = s.time;
   if (Array.isArray(s.tabs) && s.tabs.length === 3){
     serverTabs = s.tabs;
@@ -667,6 +679,7 @@ function render(){
   eSel.value = String(sessHours[1]);
 
   /* 場地號同步（團長設定） */
+  document.getElementById('floorSel').value = String(floorNo);
   document.getElementById('courtSel').value = String(courtNo);
   document.getElementById('courtName').textContent = '壹貳參肆伍陸'[courtNo-1] || courtNo;
 
@@ -874,6 +887,17 @@ document.getElementById('startSel').addEventListener('change', e =>
   saveTime(Number(e.target.value), sessHours[1]));
 document.getElementById('endSel').addEventListener('change', e =>
   saveTime(sessHours[0], Number(e.target.value)));
+
+/* 改樓層（3F／4F，全隊同步） */
+document.getElementById('floorSel').addEventListener('change', async e => {
+  const floor = Number(e.target.value);
+  try{
+    absorb(await api('setfloor', {date: DKEY, floor}));
+    online = true;
+    toast(`場地改到 ${floor}F`);
+  }catch(err){ online = false; toast('連線失敗，請再試一次'); }
+  render();
+});
 
 /* 團長改場地號（1-6，全隊同步） */
 document.getElementById('courtSel').addEventListener('change', async e => {

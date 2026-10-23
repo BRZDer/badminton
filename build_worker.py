@@ -178,13 +178,14 @@ async function readRoster(kv) {
   return v;
 }
 async function buildState(kv, date, withHist) {
-  const [signups, roster, court, tabs, time] = await Promise.all([
+  const [signups, roster, court, tabs, time, floor] = await Promise.all([
     readSignups(kv, date), readRoster(kv), kv.get('c:' + date), readTabs(kv), kv.get('t:' + date, 'json'),
+    kv.get('f:' + date),
   ]);
   const okTime = Array.isArray(time) && time.length === 2
     && Number.isInteger(time[0]) && Number.isInteger(time[1]) && time[1] > time[0];
   const out = { signups, roster, court: Math.min(Math.max(parseInt(court) || 1, 1), 6), tabs,
-    time: okTime ? time : [16, 18] };
+    time: okTime ? time : [16, 18], floor: parseInt(floor) === 3 ? 3 : 4 };
   if (withHist) {
     out.history = [];
     const base = new Date(date + 'T00:00:00Z');
@@ -254,6 +255,12 @@ export default {
         if (!(start >= 0 && start <= 23 && end >= 1 && end <= 24 && end > start))
           return J({ error: '時間範圍不合法' }, 400);
         await kv.put('t:' + date, JSON.stringify([start, end]));
+        return J(await buildState(kv, date, false));
+      }
+      if (p === 'setfloor') {   // 場地樓層 3F／4F（每場次，全隊共享）
+        const date = String(b.date || ''), floor = parseInt(b.floor);
+        if (!DATE_RE.test(date) || !(floor === 3 || floor === 4)) return J({ error: 'bad request' }, 400);
+        await kv.put('f:' + date, String(floor));
         return J(await buildState(kv, date, false));
       }
       if (p === 'setcourt') {
